@@ -1,6 +1,8 @@
 using Itura.Auth.Application.Features.Auth.ForgotPassword;
 using Itura.Auth.Application.Features.Auth.Login;
 using Itura.Auth.Application.Features.Auth.Logout;
+using Itura.Auth.Application.Features.Auth.Mfa;
+using Itura.Auth.Application.Features.Auth.OAuth;
 using Itura.Auth.Application.Features.Auth.RefreshToken;
 using Itura.Auth.Application.Features.Auth.Register;
 using Itura.Auth.Application.Features.Auth.ResetPassword;
@@ -39,6 +41,60 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var command = new LoginCommand(request.Email, request.Password, request.DeviceInfo, ip);
         var result = await sender.Send(command, ct);
+        if (result.IsFailure) return Problem(result);
+
+        // MFA challenge — return 200 with mfa_required flag instead of tokens
+        if (result.Value.MfaChallenge is not null)
+            return Ok(ApiResponse.Ok(result.Value.MfaChallenge));
+
+        return Ok(ApiResponse.Ok(result.Value.Response));
+    }
+
+    // ─── MFA endpoints ────────────────────────────────────────────────────────
+
+    [HttpPost("mfa/setup")]
+    [Authorize]
+    public async Task<IActionResult> MfaSetup(CancellationToken ct)
+    {
+        var accountId = GetAccountId();
+        var result = await sender.Send(new SetupMfaCommand(accountId), ct);
+        return result.IsSuccess ? Ok(ApiResponse.Ok(result.Value)) : Problem(result);
+    }
+
+    [HttpPost("mfa/verify-setup")]
+    [Authorize]
+    public async Task<IActionResult> MfaVerifySetup([FromBody] MfaVerifySetupRequest request, CancellationToken ct)
+    {
+        var accountId = GetAccountId();
+        var result = await sender.Send(new VerifyMfaSetupCommand(accountId, request.Code), ct);
+        return result.IsSuccess ? Ok(ApiResponse.Ok(result.Value)) : Problem(result);
+    }
+
+    [HttpPost("mfa/verify")]
+    public async Task<IActionResult> MfaVerify([FromBody] MfaVerifyRequest request, CancellationToken ct)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var result = await sender.Send(
+            new VerifyMfaCommand(request.AccountId, request.Code, request.UseBackupCode, request.DeviceInfo, ip), ct);
+        return result.IsSuccess ? Ok(ApiResponse.Ok(result.Value)) : Problem(result);
+    }
+
+    [HttpPost("mfa/disable")]
+    [Authorize]
+    public async Task<IActionResult> MfaDisable([FromBody] MfaDisableRequest request, CancellationToken ct)
+    {
+        var accountId = GetAccountId();
+        var result = await sender.Send(new DisableMfaCommand(accountId, request.Password), ct);
+        return result.IsSuccess ? Ok(ApiResponse.Ok("MFA disabled successfully.")) : Problem(result);
+    }
+
+    // ─── OAuth ────────────────────────────────────────────────────────────────
+
+    [HttpPost("oauth/google")]
+    public async Task<IActionResult> GoogleOAuth([FromBody] GoogleOAuthRequest request, CancellationToken ct)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var result = await sender.Send(new GoogleOAuthCommand(request.Code, request.RedirectUri, request.DeviceInfo, ip), ct);
         return result.IsSuccess ? Ok(ApiResponse.Ok(result.Value)) : Problem(result);
     }
 
@@ -48,7 +104,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request, CancellationToken ct)
     {
         var result = await sender.Send(new VerifyEmailCommand(request.Token), ct);
-        return result.IsSuccess ? Ok(ApiResponse.Ok("Email verified successfully.")) : Problem(result);
+        return result.IsSuccess ? Ok(ApiResponse.Ok(result.Value)) : Problem(result);
     }
 
     [HttpPost("refresh-token")]
@@ -94,6 +150,11 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
+    private Guid GetAccountId() =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub")
+            ?? throw new UnauthorizedAccessException());
+
     private IActionResult Problem(Result result)
     {
         var code = result.Error.Code;
@@ -124,6 +185,10 @@ public sealed record RefreshTokenRequest(string RefreshToken, string? DeviceInfo
 public sealed record LogoutRequest(string RefreshToken, bool LogoutAllDevices = false);
 public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Token, string NewPassword, string ConfirmPassword);
+public sealed record MfaVerifySetupRequest(string Code);
+public sealed record MfaVerifyRequest(Guid AccountId, string Code, bool UseBackupCode = false, string? DeviceInfo = null);
+public sealed record MfaDisableRequest(string Password);
+public sealed record GoogleOAuthRequest(string Code, string RedirectUri, string? DeviceInfo = null);
 
 // ─── Standard response wrapper ────────────────────────────────────────────────
 

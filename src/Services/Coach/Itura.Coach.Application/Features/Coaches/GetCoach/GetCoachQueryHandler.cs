@@ -24,5 +24,6 @@ internal sealed class GetCoachQueryHandler(ICoachRepository repository)
         c.HourlyRate, c.Currency, c.ProfileImageUrl,
         c.YearsOfExperience, c.IsActive,
         c.AverageRating, c.TotalReviews,
+        c.VerificationStatus.ToString(), c.VerifiedAt, c.RejectionReason,
         c.CreatedAt, c.UpdatedAt);
 }

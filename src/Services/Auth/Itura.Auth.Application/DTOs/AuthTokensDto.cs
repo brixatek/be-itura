@@ -18,3 +18,8 @@ public sealed record AuthUserDto(
 public sealed record LoginResponseDto(
     AuthTokensDto Tokens,
     AuthUserDto User);
+
+public sealed record MfaRequiredDto(
+    bool MfaRequired,
+    Guid AccountId,
+    string Message = "MFA verification required.");

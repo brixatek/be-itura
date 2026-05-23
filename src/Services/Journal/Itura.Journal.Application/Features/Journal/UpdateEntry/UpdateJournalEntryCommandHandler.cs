@@ -7,7 +7,8 @@ namespace Itura.Journal.Application.Features.Journal.UpdateEntry;
 
 internal sealed class UpdateJournalEntryCommandHandler(
     IJournalEntryRepository repository,
-    IJournalUnitOfWork unitOfWork)
+    IJournalUnitOfWork unitOfWork,
+    IEncryptionService encryption)
     : IRequestHandler<UpdateJournalEntryCommand, Result>
 {
     public async Task<Result> Handle(UpdateJournalEntryCommand request, CancellationToken cancellationToken)
@@ -19,7 +20,8 @@ internal sealed class UpdateJournalEntryCommandHandler(
         if (entry.UserId != request.UserId)
             return Result.Failure(Error.Forbidden());
 
-        var result = entry.Update(request.Title, request.Content, request.Tags, request.MoodScore, request.IsPrivate);
+        var encryptedContent = encryption.Encrypt(request.Content);
+        var result = entry.Update(request.Title, encryptedContent, request.Tags, request.MoodScore, request.IsPrivate);
         if (result.IsFailure) return result;
 
         repository.Update(entry);

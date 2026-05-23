@@ -8,4 +8,4 @@ public sealed record LoginCommand(
     string Email,
     string Password,
     string? DeviceInfo,
-    string? IpAddress) : IRequest<Result<LoginResponseDto>>;
+    string? IpAddress) : IRequest<Result<LoginResult>>;

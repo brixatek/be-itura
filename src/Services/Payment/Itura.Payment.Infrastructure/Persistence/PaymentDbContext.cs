@@ -9,6 +9,11 @@ public sealed class PaymentDbContext(DbContextOptions<PaymentDbContext> options,
     : DbContext(options)
 {
     public DbSet<PaymentRecord> PaymentRecords => Set<PaymentRecord>();
+    public DbSet<Wallet> Wallets => Set<Wallet>();
+    public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
+    public DbSet<CoachEarning> CoachEarnings => Set<CoachEarning>();
+    public DbSet<CoachBankAccount> CoachBankAccounts => Set<CoachBankAccount>();
+    public DbSet<CoachPayout> CoachPayouts => Set<CoachPayout>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

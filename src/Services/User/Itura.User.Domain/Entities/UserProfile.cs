@@ -16,6 +16,13 @@ public sealed class UserProfile : AggregateRoot
     public Gender? Gender { get; private set; }
     public bool OnboardingCompleted { get; private set; }
 
+    // XP & gamification
+    public int TotalXp { get; private set; }
+    public int WellnessLevel { get; private set; } = 1;
+
+    // GDPR
+    public bool IsAnonymized { get; private set; }
+
     // Preferences (embedded)
     public string Language { get; private set; } = "en";
     public bool EmailNotifications { get; private set; } = true;
@@ -72,4 +79,39 @@ public sealed class UserProfile : AggregateRoot
         Theme = theme;
         Language = language;
     }
+
+    public int AwardXp(int amount)
+    {
+        TotalXp += amount;
+        var newLevel = CalculateLevel(TotalXp);
+        var leveled = newLevel > WellnessLevel;
+        WellnessLevel = newLevel;
+        return leveled ? newLevel : 0;
+    }
+
+    public void Anonymize()
+    {
+        Email = $"deleted_{Id:N}@anonymized.local";
+        FullName = "Deleted User";
+        AvatarUrl = null;
+        Bio = null;
+        DateOfBirth = null;
+        Gender = null;
+        IsAnonymized = true;
+        MarkDeleted();
+    }
+
+    private static int CalculateLevel(int xp) => xp switch
+    {
+        < 100 => 1,
+        < 300 => 2,
+        < 600 => 3,
+        < 1000 => 4,
+        < 1500 => 5,
+        < 2100 => 6,
+        < 2800 => 7,
+        < 3600 => 8,
+        < 4500 => 9,
+        _ => 10
+    };
 }

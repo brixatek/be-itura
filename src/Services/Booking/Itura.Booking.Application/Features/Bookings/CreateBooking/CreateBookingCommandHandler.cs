@@ -8,6 +8,7 @@ namespace Itura.Booking.Application.Features.Bookings.CreateBooking;
 
 internal sealed class CreateBookingCommandHandler(
     IBookingRepository repository,
+    ISlotReservationService slotReservation,
     IBookingUnitOfWork unitOfWork)
     : IRequestHandler<CreateBookingCommand, Result<Guid>>
 {
@@ -20,9 +21,17 @@ internal sealed class CreateBookingCommandHandler(
 
         if (result.IsFailure) return Result.Failure<Guid>(result.Error);
 
-        await repository.AddAsync(result.Value, cancellationToken);
+        var booking = result.Value;
+
+        var reserved = await slotReservation.TryReserveAsync(
+            request.CoachUserId, request.ScheduledAt, booking.Id, cancellationToken);
+
+        if (!reserved)
+            return Result.Failure<Guid>(Error.Conflict("Booking.SlotTaken", "This time slot is no longer available."));
+
+        await repository.AddAsync(booking, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(result.Value.Id);
+        return Result.Success(booking.Id);
     }
 }

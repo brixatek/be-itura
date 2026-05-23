@@ -25,6 +25,11 @@ public sealed class Account : AggregateRoot
     public DateTime? LockoutUntil { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
 
+    // MFA
+    public bool IsMfaEnabled { get; private set; }
+    public string? TotpSecretEncrypted { get; private set; }
+    public List<string> MfaBackupCodes { get; private set; } = [];
+
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = [];
     public ICollection<PasswordResetToken> PasswordResetTokens { get; private set; } = [];
 
@@ -119,4 +124,56 @@ public sealed class Account : AggregateRoot
 
     public bool CanLogin() =>
         Status == AccountStatus.Active && !IsLockedOut();
+
+    public void StoreTotpSecret(string encryptedSecret)
+    {
+        TotpSecretEncrypted = encryptedSecret;
+        MarkUpdated();
+    }
+
+    public Result EnableMfa(List<string> hashedBackupCodes)
+    {
+        if (TotpSecretEncrypted is null)
+            return Result.Failure(Error.Validation("Auth.MfaNotSetup", "MFA setup has not been initiated."));
+
+        IsMfaEnabled = true;
+        MfaBackupCodes = hashedBackupCodes;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result DisableMfa()
+    {
+        IsMfaEnabled = false;
+        TotpSecretEncrypted = null;
+        MfaBackupCodes = [];
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result UseBackupCode(string hashedCode)
+    {
+        if (!MfaBackupCodes.Remove(hashedCode))
+            return Result.Failure(Error.Validation("Auth.InvalidBackupCode", "Invalid or already used backup code."));
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Suspend(string? reason)
+    {
+        if (Status == AccountStatus.Suspended)
+            return Result.Success();
+        Status = AccountStatus.Suspended;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Restore()
+    {
+        if (Status != AccountStatus.Suspended)
+            return Result.Failure(Error.Conflict("Account.NotSuspended", "Account is not suspended."));
+        Status = AccountStatus.Active;
+        MarkUpdated();
+        return Result.Success();
+    }
 }

@@ -9,6 +9,11 @@ public sealed class UserDbContext(DbContextOptions<UserDbContext> options, IPubl
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<WellnessGoal> WellnessGoals => Set<WellnessGoal>();
+    public DbSet<WellnessAssessment> WellnessAssessments => Set<WellnessAssessment>();
+    public DbSet<XpTransaction> XpTransactions => Set<XpTransaction>();
+    public DbSet<UserStreak> UserStreaks => Set<UserStreak>();
+    public DbSet<BadgeDefinition> BadgeDefinitions => Set<BadgeDefinition>();
+    public DbSet<BadgeEarned> BadgesEarned => Set<BadgeEarned>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

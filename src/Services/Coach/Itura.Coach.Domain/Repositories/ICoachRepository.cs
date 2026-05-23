@@ -7,6 +7,7 @@ public interface ICoachRepository
 {
     Task<CoachProfile?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<CoachProfile?> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
+    Task<PagedResult<CoachProfile>> GetPendingAsync(int page, int pageSize, CancellationToken ct = default);
     Task<PagedResult<CoachProfile>> GetActiveAsync(
         int page, int pageSize,
         string? specialization = null,

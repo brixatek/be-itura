@@ -2,6 +2,7 @@ using Itura.Payment.Application.Features.Payments.GetMyPayments;
 using Itura.Payment.Application.Features.Payments.GetPayment;
 using Itura.Payment.Application.Features.Payments.GetPaymentByBooking;
 using Itura.Payment.Application.Features.Payments.InitiatePayment;
+using Itura.Payment.Application.Features.Payments.Paystack;
 using Itura.Payment.Application.Features.Payments.ProcessPayment;
 using Itura.Payment.Application.Features.Payments.RefundPayment;
 using MediatR;
@@ -92,6 +93,34 @@ public sealed class PaymentsController(IMediator mediator) : ControllerBase
         }
         return Ok(new { success = true });
     }
+
+    // ─── Paystack ────────────────────────────────────────────────────────────
+
+    [HttpPost("paystack/initialize")]
+    public async Task<IActionResult> PaystackInitialize([FromBody] PaystackInitializeRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new InitializePaystackPaymentCommand(
+            GetUserId(), request.PayeeUserId, request.BookingId,
+            request.Amount, request.Currency, request.Email, request.CallbackUrl), ct);
+
+        if (result.IsFailure)
+            return BadRequest(new { success = false, error = result.Error });
+
+        return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpPost("paystack/verify/{reference}")]
+    public async Task<IActionResult> PaystackVerify(string reference, CancellationToken ct)
+    {
+        var result = await mediator.Send(new VerifyPaystackPaymentCommand(reference, GetUserId()), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.EndsWith("NotFound")) return NotFound(new { success = false, error = result.Error });
+            if (result.Error.Code == "Auth.Forbidden") return Forbid();
+            return BadRequest(new { success = false, error = result.Error });
+        }
+        return Ok(new { success = true, data = result.Value });
+    }
 }
 
 public sealed record InitiatePaymentRequest(
@@ -105,3 +134,11 @@ public sealed record ProcessPaymentRequest(
     bool Succeed,
     string? TransactionReference,
     string? FailureReason);
+
+public sealed record PaystackInitializeRequest(
+    Guid PayeeUserId,
+    Guid BookingId,
+    decimal Amount,
+    string Currency,
+    string Email,
+    string? CallbackUrl);

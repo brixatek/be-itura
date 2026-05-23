@@ -1,3 +1,4 @@
+using Itura.Coach.Domain.Enums;
 using Itura.Coach.Domain.Events;
 using Itura.SharedKernel.Domain;
 using Itura.SharedKernel.Results;
@@ -18,6 +19,12 @@ public sealed class CoachProfile : AggregateRoot
     public bool IsActive { get; private set; }
     public double? AverageRating { get; private set; }
     public int TotalReviews { get; private set; }
+
+    // Verification
+    public VerificationStatus VerificationStatus { get; private set; } = VerificationStatus.Pending;
+    public DateTime? VerifiedAt { get; private set; }
+    public Guid? VerifiedBy { get; private set; }
+    public string? RejectionReason { get; private set; }
 
     private CoachProfile() { }
 
@@ -102,5 +109,44 @@ public sealed class CoachProfile : AggregateRoot
     {
         IsActive = true;
         MarkUpdated();
+    }
+
+    public Result Approve(Guid adminId)
+    {
+        if (VerificationStatus == VerificationStatus.Verified)
+            return Result.Failure(Error.Conflict("Coach.AlreadyVerified", "Coach is already verified."));
+
+        VerificationStatus = VerificationStatus.Verified;
+        VerifiedAt = DateTime.UtcNow;
+        VerifiedBy = adminId;
+        RejectionReason = null;
+        IsActive = true;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Reject(Guid adminId, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            return Result.Failure(Error.Validation("Coach.RejectionReason", "Rejection reason is required."));
+
+        VerificationStatus = VerificationStatus.Rejected;
+        RejectionReason = reason;
+        VerifiedBy = adminId;
+        IsActive = false;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Suspend(Guid adminId, string reason)
+    {
+        if (VerificationStatus != VerificationStatus.Verified)
+            return Result.Failure(Error.Validation("Coach.NotVerified", "Only verified coaches can be suspended."));
+
+        VerificationStatus = VerificationStatus.Suspended;
+        RejectionReason = reason;
+        IsActive = false;
+        MarkUpdated();
+        return Result.Success();
     }
 }

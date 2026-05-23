@@ -4,6 +4,8 @@ using Itura.Coach.Application.Features.Coaches.GetCoach;
 using Itura.Coach.Application.Features.Coaches.GetCoaches;
 using Itura.Coach.Application.Features.Coaches.GetMyProfile;
 using Itura.Coach.Application.Features.Coaches.UpdateProfile;
+using Itura.Coach.Application.Features.Availability;
+using Itura.Coach.Application.Features.Coaches.Verification;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -113,3 +115,141 @@ public sealed record UpdateCoachProfileRequest(
     string? Currency,
     string? ProfileImageUrl,
     int YearsOfExperience);
+
+// ─── Admin verification controller ───────────────────────────────────────────
+
+[ApiController]
+[Route("api/v1/admin/coaches")]
+[Authorize(Roles = "Admin")]
+public sealed class AdminCoachesController(ISender sender) : ControllerBase
+{
+    private Guid CurrentUserId =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub")
+            ?? throw new UnauthorizedAccessException());
+
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPending(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetPendingCoachesQuery(page, pageSize), ct);
+        return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpGet("{id:guid}/review")]
+    public async Task<IActionResult> Review(Guid id, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetCoachQuery(id), ct);
+        if (result.IsFailure) return NotFound(new { error = result.Error.Message });
+        return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new ApproveCoachCommand(id, CurrentUserId), ct);
+        return result.IsSuccess ? Ok(new { success = true }) : BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectRequest request, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new RejectCoachCommand(id, CurrentUserId, request.Reason), ct);
+        return result.IsSuccess ? Ok(new { success = true }) : BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("{id:guid}/suspend")]
+    public async Task<IActionResult> Suspend(Guid id, [FromBody] RejectRequest request, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new SuspendCoachCommand(id, CurrentUserId, request.Reason), ct);
+        return result.IsSuccess ? Ok(new { success = true }) : BadRequest(new { error = result.Error });
+    }
+}
+
+public sealed record RejectRequest(string Reason);
+
+// ─── Availability controller ──────────────────────────────────────────────────
+
+[ApiController]
+[Route("api/v1/coaches")]
+[Authorize]
+public sealed class AvailabilityController(ISender sender) : ControllerBase
+{
+    private Guid CurrentUserId =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub")
+            ?? throw new UnauthorizedAccessException());
+
+    [HttpGet("me/availability")]
+    public async Task<IActionResult> GetMyAvailability(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetAvailabilityQuery(CurrentUserId), ct);
+        return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpPost("me/availability")]
+    public async Task<IActionResult> AddAvailability([FromBody] AddAvailabilityRequest request, CancellationToken ct)
+    {
+        if (!TimeOnly.TryParse(request.StartTime, out var start) ||
+            !TimeOnly.TryParse(request.EndTime, out var end))
+            return BadRequest(new { error = "Invalid time format. Use HH:mm." });
+
+        var result = await sender.Send(new AddAvailabilityCommand(
+            CurrentUserId, request.DayOfWeek, start, end,
+            request.SlotDurationMinutes, request.Timezone ?? "UTC"), ct);
+
+        return result.IsSuccess
+            ? Ok(new { success = true, data = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
+    [HttpDelete("me/availability/{id:guid}")]
+    public async Task<IActionResult> RemoveAvailability(Guid id, CancellationToken ct)
+    {
+        var result = await sender.Send(new RemoveAvailabilityCommand(id, CurrentUserId), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.Contains("NotFound")) return NotFound(new { error = result.Error });
+            if (result.Error.Code.Contains("Forbidden")) return Forbid();
+            return BadRequest(new { error = result.Error });
+        }
+        return NoContent();
+    }
+
+    [HttpGet("{coachUserId:guid}/available-slots")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAvailableSlots(
+        Guid coachUserId,
+        [FromQuery] string date,
+        [FromQuery] string? timezone = null,
+        CancellationToken ct = default)
+    {
+        if (!DateOnly.TryParse(date, out var parsedDate))
+            return BadRequest(new { error = "Invalid date format. Use yyyy-MM-dd." });
+
+        var result = await sender.Send(new GetAvailableSlotsQuery(coachUserId, parsedDate, timezone), ct);
+        return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpPost("me/blocked-times")]
+    public async Task<IActionResult> AddBlockedTime([FromBody] AddBlockedTimeRequest request, CancellationToken ct)
+    {
+        var result = await sender.Send(new AddBlockedTimeCommand(
+            CurrentUserId, request.StartUtc, request.EndUtc, request.Reason), ct);
+        return result.IsSuccess
+            ? Ok(new { success = true, data = new { id = result.Value } })
+            : BadRequest(new { error = result.Error });
+    }
+}
+
+public sealed record AddAvailabilityRequest(
+    DayOfWeek DayOfWeek,
+    string StartTime,
+    string EndTime,
+    int SlotDurationMinutes = 60,
+    string? Timezone = null);
+
+public sealed record AddBlockedTimeRequest(
+    DateTime StartUtc,
+    DateTime EndUtc,
+    string? Reason = null);

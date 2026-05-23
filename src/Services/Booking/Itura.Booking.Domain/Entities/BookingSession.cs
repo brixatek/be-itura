@@ -16,8 +16,13 @@ public sealed class BookingSession : AggregateRoot
     public decimal Price { get; private set; }
     public string Currency { get; private set; } = "USD";
     public string? CancellationReason { get; private set; }
+    public bool Reminder24hSent { get; private set; }
+    public bool Reminder1hSent { get; private set; }
 
     private BookingSession() { }
+
+    public void MarkReminder24hSent() { Reminder24hSent = true; MarkUpdated(); }
+    public void MarkReminder1hSent() { Reminder1hSent = true; MarkUpdated(); }
 
     public static Result<BookingSession> Create(
         Guid coachId, Guid coachUserId, Guid clientUserId,

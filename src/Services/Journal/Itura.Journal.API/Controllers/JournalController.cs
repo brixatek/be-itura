@@ -1,3 +1,4 @@
+using Itura.Journal.Application.Features.Journal.CoachSharing;
 using Itura.Journal.Application.Features.Journal.CreateEntry;
 using Itura.Journal.Application.Features.Journal.DeleteEntry;
 using Itura.Journal.Application.Features.Journal.GetEntries;
@@ -80,6 +81,38 @@ public sealed class JournalController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(new GetJournalTagsQuery(CurrentUserId), ct);
         return Ok(result.Value);
+    }
+
+    [HttpPost("entries/{entryId:guid}/share/{coachId:guid}")]
+    public async Task<IActionResult> Share(Guid entryId, Guid coachId, CancellationToken ct)
+    {
+        var result = await sender.Send(new ShareJournalEntryCommand(entryId, CurrentUserId, coachId), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.StartsWith("Auth")) return Forbid();
+            return NotFound(new { error = result.Error.Message });
+        }
+        return Ok(new { success = true });
+    }
+
+    [HttpDelete("entries/{entryId:guid}/share/{coachId:guid}")]
+    public async Task<IActionResult> Unshare(Guid entryId, Guid coachId, CancellationToken ct)
+    {
+        var result = await sender.Send(new UnshareJournalEntryCommand(entryId, CurrentUserId, coachId), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.StartsWith("Auth")) return Forbid();
+            return NotFound(new { error = result.Error.Message });
+        }
+        return NoContent();
+    }
+
+    [HttpGet("shared-with-me")]
+    public async Task<IActionResult> GetSharedWithMe(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetCoachSharedJournalsQuery(CurrentUserId, page, pageSize), ct);
+        return Ok(new { success = true, data = result.Value });
     }
 }
 

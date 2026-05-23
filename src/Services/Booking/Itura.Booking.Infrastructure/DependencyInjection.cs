@@ -1,9 +1,11 @@
 using Itura.Booking.Application.Common.Interfaces;
 using Itura.Booking.Domain.Events;
 using Itura.Booking.Domain.Repositories;
+using Itura.Booking.Infrastructure.BackgroundJobs;
 using Itura.Booking.Infrastructure.EventHandlers;
 using Itura.Booking.Infrastructure.Persistence;
 using Itura.Booking.Infrastructure.Repositories;
+using Itura.Booking.Infrastructure.Services;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using System.Security.Cryptography;
 
 namespace Itura.Booking.Infrastructure;
@@ -25,6 +28,19 @@ public static class DependencyInjection
 
         services.AddScoped<IBookingUnitOfWork, UnitOfWork>();
         services.AddScoped<IBookingRepository, BookingRepository>();
+
+        // Redis slot reservation
+        var redisConn = config.GetConnectionString("Redis") ?? "localhost:6379";
+        try
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConn));
+        }
+        catch
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false"));
+        }
+        services.AddScoped<ISlotReservationService, SlotReservationService>();
+        services.AddHostedService<SessionReminderJob>();
 
         services.AddMassTransit(x =>
         {

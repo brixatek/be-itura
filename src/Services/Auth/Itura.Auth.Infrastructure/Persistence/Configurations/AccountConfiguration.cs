@@ -45,6 +45,13 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.FailedLoginCount).HasColumnName("failed_login_count").HasDefaultValue(0);
         builder.Property(a => a.LockoutUntil).HasColumnName("lockout_until");
         builder.Property(a => a.LastLoginAt).HasColumnName("last_login_at");
+
+        builder.Property(a => a.IsMfaEnabled).HasColumnName("is_mfa_enabled").HasDefaultValue(false);
+        builder.Property(a => a.TotpSecretEncrypted).HasColumnName("totp_secret_encrypted");
+        builder.Property(a => a.MfaBackupCodes).HasColumnName("mfa_backup_codes")
+            .HasColumnType("text[]")
+            .HasDefaultValueSql("'{}'::text[]");
+
         builder.Property(a => a.CreatedAt).HasColumnName("created_at");
         builder.Property(a => a.UpdatedAt).HasColumnName("updated_at");
         builder.Property(a => a.DeletedAt).HasColumnName("deleted_at");

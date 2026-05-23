@@ -26,6 +26,8 @@ internal sealed class BookingSessionConfiguration : IEntityTypeConfiguration<Boo
         builder.Property(b => b.Price).HasColumnName("price").HasPrecision(18, 2).IsRequired();
         builder.Property(b => b.Currency).HasColumnName("currency").HasMaxLength(3).IsRequired();
         builder.Property(b => b.CancellationReason).HasColumnName("cancellation_reason").HasMaxLength(500);
+        builder.Property(b => b.Reminder24hSent).HasColumnName("reminder_24h_sent").HasDefaultValue(false);
+        builder.Property(b => b.Reminder1hSent).HasColumnName("reminder_1h_sent").HasDefaultValue(false);
         builder.Property(b => b.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(b => b.UpdatedAt).HasColumnName("updated_at");
         builder.Property(b => b.DeletedAt).HasColumnName("deleted_at");

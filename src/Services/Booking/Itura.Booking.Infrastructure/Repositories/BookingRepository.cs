@@ -39,6 +39,17 @@ internal sealed class BookingRepository(BookingDbContext context) : IBookingRepo
         return new PagedResult<BookingSession>(items, total, page, pageSize);
     }
 
+    public Task<List<BookingSession>> GetPendingRemindersAsync(DateTime from, DateTime to, bool is24h, CancellationToken ct = default)
+    {
+        var query = context.BookingSessions
+            .Where(b => b.Status == Itura.Booking.Domain.Enums.BookingStatus.Confirmed
+                     && b.ScheduledAt >= from && b.ScheduledAt < to);
+        query = is24h
+            ? query.Where(b => !b.Reminder24hSent)
+            : query.Where(b => !b.Reminder1hSent);
+        return query.ToListAsync(ct);
+    }
+
     public async Task AddAsync(BookingSession session, CancellationToken ct = default) =>
         await context.BookingSessions.AddAsync(session, ct);
 

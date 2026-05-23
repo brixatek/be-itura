@@ -25,6 +25,8 @@ public static class DependencyInjection
 
         services.AddScoped<ICoachUnitOfWork, UnitOfWork>();
         services.AddScoped<ICoachRepository, CoachRepository>();
+        services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+        services.AddScoped<ICoachEmailService, Itura.Coach.Infrastructure.Services.CoachEmailService>();
 
         services.AddMassTransit(x =>
         {

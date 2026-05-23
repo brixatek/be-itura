@@ -4,6 +4,9 @@ using Itura.Notification.Infrastructure.Consumers;
 using Itura.Notification.Infrastructure.Persistence;
 using Itura.Notification.Infrastructure.Repositories;
 using Itura.Notification.Infrastructure.Services;
+// Aliases for ambiguous types
+using IDeviceTokenRepository = Itura.Notification.Domain.Repositories.IDeviceTokenRepository;
+using DeviceTokenRepository = Itura.Notification.Infrastructure.Repositories.DeviceTokenRepository;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -26,10 +29,14 @@ public static class DependencyInjection
         // Unit of work + repository
         services.AddScoped<INotificationUnitOfWork, UnitOfWork>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
 
         // Email
         services.Configure<EmailOptions>(config.GetSection(EmailOptions.Section));
         services.AddScoped<IEmailService, EmailService>();
+
+        // Push notifications
+        services.AddScoped<IPushNotificationService, FirebasePushService>();
 
         // MassTransit — consume integration events
         services.AddMassTransit(x =>

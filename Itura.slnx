@@ -3,9 +3,15 @@
   <Folder Name="/src/Services/" />
   <Folder Name="/src/Services/AI/">
     <Project Path="src/Services/AI/Itura.AI.API/Itura.AI.API.csproj" />
+    <Project Path="src/Services/AI/Itura.AI.Application/Itura.AI.Application.csproj" />
+    <Project Path="src/Services/AI/Itura.AI.Domain/Itura.AI.Domain.csproj" />
+    <Project Path="src/Services/AI/Itura.AI.Infrastructure/Itura.AI.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Analytics/">
     <Project Path="src/Services/Analytics/Itura.Analytics.API/Itura.Analytics.API.csproj" />
+    <Project Path="src/Services/Analytics/Itura.Analytics.Application/Itura.Analytics.Application.csproj" />
+    <Project Path="src/Services/Analytics/Itura.Analytics.Domain/Itura.Analytics.Domain.csproj" />
+    <Project Path="src/Services/Analytics/Itura.Analytics.Infrastructure/Itura.Analytics.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Auth/">
     <Project Path="src/Services/Auth/Itura.Auth.API/Itura.Auth.API.csproj" />
@@ -27,6 +33,9 @@
   </Folder>
   <Folder Name="/src/Services/Community/">
     <Project Path="src/Services/Community/Itura.Community.API/Itura.Community.API.csproj" />
+    <Project Path="src/Services/Community/Itura.Community.Application/Itura.Community.Application.csproj" />
+    <Project Path="src/Services/Community/Itura.Community.Domain/Itura.Community.Domain.csproj" />
+    <Project Path="src/Services/Community/Itura.Community.Infrastructure/Itura.Community.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Content/">
     <Project Path="src/Services/Content/Itura.Content.API/Itura.Content.API.csproj" />
@@ -36,9 +45,15 @@
   </Folder>
   <Folder Name="/src/Services/Corporate/">
     <Project Path="src/Services/Corporate/Itura.Corporate.API/Itura.Corporate.API.csproj" />
+    <Project Path="src/Services/Corporate/Itura.Corporate.Application/Itura.Corporate.Application.csproj" />
+    <Project Path="src/Services/Corporate/Itura.Corporate.Domain/Itura.Corporate.Domain.csproj" />
+    <Project Path="src/Services/Corporate/Itura.Corporate.Infrastructure/Itura.Corporate.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Gamification/">
     <Project Path="src/Services/Gamification/Itura.Gamification.API/Itura.Gamification.API.csproj" />
+    <Project Path="src/Services/Gamification/Itura.Gamification.Application/Itura.Gamification.Application.csproj" />
+    <Project Path="src/Services/Gamification/Itura.Gamification.Domain/Itura.Gamification.Domain.csproj" />
+    <Project Path="src/Services/Gamification/Itura.Gamification.Infrastructure/Itura.Gamification.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Gateway/">
     <Project Path="src/Services/Gateway/Itura.Gateway/Itura.Gateway.csproj" />
@@ -51,6 +66,9 @@
   </Folder>
   <Folder Name="/src/Services/Media/">
     <Project Path="src/Services/Media/Itura.Media.API/Itura.Media.API.csproj" />
+    <Project Path="src/Services/Media/Itura.Media.Application/Itura.Media.Application.csproj" />
+    <Project Path="src/Services/Media/Itura.Media.Domain/Itura.Media.Domain.csproj" />
+    <Project Path="src/Services/Media/Itura.Media.Infrastructure/Itura.Media.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Mood/">
     <Project Path="src/Services/Mood/Itura.Mood.API/Itura.Mood.API.csproj" />
@@ -72,6 +90,9 @@
   </Folder>
   <Folder Name="/src/Services/Search/">
     <Project Path="src/Services/Search/Itura.Search.API/Itura.Search.API.csproj" />
+    <Project Path="src/Services/Search/Itura.Search.Application/Itura.Search.Application.csproj" />
+    <Project Path="src/Services/Search/Itura.Search.Domain/Itura.Search.Domain.csproj" />
+    <Project Path="src/Services/Search/Itura.Search.Infrastructure/Itura.Search.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/User/">
     <Project Path="src/Services/User/Itura.User.API/Itura.User.API.csproj" />

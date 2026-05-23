@@ -16,6 +16,20 @@ internal sealed class CoachRepository(CoachDbContext context) : ICoachRepository
     public async Task<CoachProfile?> GetByUserIdAsync(Guid userId, CancellationToken ct = default) =>
         await context.Coaches.FirstOrDefaultAsync(c => c.UserId == userId, ct);
 
+    public async Task<PagedResult<CoachProfile>> GetPendingAsync(int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = context.Coaches
+            .IgnoreQueryFilters()
+            .Where(c => c.VerificationStatus == Itura.Coach.Domain.Enums.VerificationStatus.Pending);
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(c => c.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return new PagedResult<CoachProfile>(items, total, page, pageSize);
+    }
+
     public async Task<PagedResult<CoachProfile>> GetActiveAsync(
         int page, int pageSize,
         string? specialization = null,

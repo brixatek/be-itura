@@ -1,4 +1,5 @@
 using Itura.Coach.Domain.Entities;
+using Itura.Coach.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -24,6 +25,15 @@ internal sealed class CoachConfiguration : IEntityTypeConfiguration<CoachProfile
         builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(c => c.AverageRating).HasColumnName("average_rating");
         builder.Property(c => c.TotalReviews).HasColumnName("total_reviews").IsRequired();
+        builder.Property(c => c.VerificationStatus)
+            .HasColumnName("verification_status")
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(VerificationStatus.Pending)
+            .IsRequired();
+        builder.Property(c => c.VerifiedAt).HasColumnName("verified_at");
+        builder.Property(c => c.VerifiedBy).HasColumnName("verified_by");
+        builder.Property(c => c.RejectionReason).HasColumnName("rejection_reason").HasMaxLength(500);
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");
         builder.Property(c => c.DeletedAt).HasColumnName("deleted_at");
@@ -32,6 +42,7 @@ internal sealed class CoachConfiguration : IEntityTypeConfiguration<CoachProfile
 
         builder.HasIndex(c => c.UserId).IsUnique().HasDatabaseName("ix_coaches_user_id");
         builder.HasIndex(c => c.IsActive).HasDatabaseName("ix_coaches_is_active");
+        builder.HasIndex(c => c.VerificationStatus).HasDatabaseName("ix_coaches_verification_status");
         builder.HasIndex(c => c.AverageRating).HasDatabaseName("ix_coaches_average_rating");
     }
 }

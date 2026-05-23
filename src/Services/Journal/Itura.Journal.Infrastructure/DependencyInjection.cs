@@ -4,6 +4,7 @@ using Itura.Journal.Domain.Repositories;
 using Itura.Journal.Infrastructure.EventHandlers;
 using Itura.Journal.Infrastructure.Persistence;
 using Itura.Journal.Infrastructure.Repositories;
+using Itura.Journal.Infrastructure.Services;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +26,11 @@ public static class DependencyInjection
 
         services.AddScoped<IJournalUnitOfWork, UnitOfWork>();
         services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
+        services.AddScoped<IJournalCoachShareRepository, JournalCoachShareRepository>();
+
+        // AES-256-GCM encryption for journal content
+        services.Configure<EncryptionOptions>(config.GetSection(EncryptionOptions.Section));
+        services.AddScoped<IEncryptionService, AesGcmEncryptionService>();
 
         services.AddMassTransit(x =>
         {

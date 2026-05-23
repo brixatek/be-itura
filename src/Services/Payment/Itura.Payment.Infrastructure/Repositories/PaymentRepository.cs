@@ -16,6 +16,9 @@ internal sealed class PaymentRepository(PaymentDbContext context) : IPaymentRepo
     public async Task<PaymentRecord?> GetByBookingIdAsync(Guid bookingId, CancellationToken ct = default) =>
         await context.PaymentRecords.FirstOrDefaultAsync(p => p.BookingId == bookingId, ct);
 
+    public async Task<PaymentRecord?> GetByReferenceAsync(string reference, CancellationToken ct = default) =>
+        await context.PaymentRecords.FirstOrDefaultAsync(p => p.TransactionReference == reference, ct);
+
     public async Task<PagedResult<PaymentRecord>> GetByPayerUserIdAsync(
         Guid payerUserId, int page, int pageSize, CancellationToken ct = default)
     {

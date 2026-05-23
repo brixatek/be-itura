@@ -14,5 +14,8 @@ public sealed record CoachDto(
     bool IsActive,
     double? AverageRating,
     int TotalReviews,
+    string VerificationStatus,
+    DateTime? VerifiedAt,
+    string? RejectionReason,
     DateTime CreatedAt,
     DateTime UpdatedAt);

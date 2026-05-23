@@ -4,6 +4,13 @@ using Itura.Payment.Domain.Repositories;
 using Itura.Payment.Infrastructure.EventHandlers;
 using Itura.Payment.Infrastructure.Persistence;
 using Itura.Payment.Infrastructure.Repositories;
+using Itura.Payment.Infrastructure.Services;
+using IWalletRepository = Itura.Payment.Domain.Repositories.IWalletRepository;
+using WalletRepository = Itura.Payment.Infrastructure.Repositories.WalletRepository;
+using ICoachPayoutRepository = Itura.Payment.Domain.Repositories.ICoachPayoutRepository;
+using CoachPayoutRepository = Itura.Payment.Infrastructure.Repositories.CoachPayoutRepository;
+using IFieldEncryptionService = Itura.Payment.Application.Common.Interfaces.IFieldEncryptionService;
+using FieldEncryptionService = Itura.Payment.Infrastructure.Services.FieldEncryptionService;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +32,20 @@ public static class DependencyInjection
 
         services.AddScoped<IPaymentUnitOfWork, UnitOfWork>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<ICoachPayoutRepository, CoachPayoutRepository>();
+        services.AddScoped<IFieldEncryptionService, FieldEncryptionService>();
+
+        // Paystack
+        services.Configure<PaystackOptions>(config.GetSection(PaystackOptions.Section));
+        services.AddHttpClient("Paystack", (sp, client) =>
+        {
+            var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PaystackOptions>>().Value;
+            client.BaseAddress = new Uri(opts.BaseUrl);
+            if (!string.IsNullOrEmpty(opts.SecretKey))
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {opts.SecretKey}");
+        });
+        services.AddScoped<IPaystackService, PaystackService>();
 
         services.AddMassTransit(x =>
         {

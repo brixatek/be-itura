@@ -1,3 +1,4 @@
+using Itura.Notification.Application.Features.Notifications.DeviceTokens;
 using Itura.Notification.Application.Features.Notifications.GetNotifications;
 using Itura.Notification.Application.Features.Notifications.MarkAllRead;
 using Itura.Notification.Application.Features.Notifications.MarkRead;
@@ -42,4 +43,22 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         await sender.Send(new MarkAllNotificationsReadCommand(CurrentUserId), ct);
         return NoContent();
     }
+
+    // ─── Device tokens ────────────────────────────────────────────────────────
+
+    [HttpPost("device-tokens")]
+    public async Task<IActionResult> RegisterDeviceToken([FromBody] DeviceTokenRequest request, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new RegisterDeviceTokenCommand(CurrentUserId, request.Token, request.Platform), ct);
+        return result.IsSuccess ? Ok(new { success = true }) : BadRequest(new { error = result.Error.Message });
+    }
+
+    [HttpDelete("device-tokens/{token}")]
+    public async Task<IActionResult> UnregisterDeviceToken(string token, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new UnregisterDeviceTokenCommand(CurrentUserId, token), ct);
+        return result.IsSuccess ? NoContent() : NotFound(new { error = result.Error.Message });
+    }
 }
+
+public sealed record DeviceTokenRequest(string Token, string Platform);

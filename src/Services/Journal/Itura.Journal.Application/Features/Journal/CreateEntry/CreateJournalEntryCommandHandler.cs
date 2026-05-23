@@ -7,13 +7,16 @@ namespace Itura.Journal.Application.Features.Journal.CreateEntry;
 
 internal sealed class CreateJournalEntryCommandHandler(
     IJournalEntryRepository repository,
-    IJournalUnitOfWork unitOfWork)
+    IJournalUnitOfWork unitOfWork,
+    IEncryptionService encryption)
     : IRequestHandler<CreateJournalEntryCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateJournalEntryCommand request, CancellationToken cancellationToken)
     {
+        var encryptedContent = encryption.Encrypt(request.Content);
+
         var result = Domain.Entities.JournalEntry.Create(
-            request.UserId, request.Title, request.Content,
+            request.UserId, request.Title, encryptedContent,
             request.Tags, request.MoodScore, request.IsPrivate);
 
         if (result.IsFailure) return Result.Failure<Guid>(result.Error);

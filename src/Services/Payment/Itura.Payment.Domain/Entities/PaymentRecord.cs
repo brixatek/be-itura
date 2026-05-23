@@ -85,4 +85,10 @@ public sealed class PaymentRecord : AggregateRoot
             Id, BookingId, PayerUserId, PayeeUserId, Amount, Currency));
         return Result.Success();
     }
+
+    public void AssignReference(string reference)
+    {
+        TransactionReference = reference;
+        MarkUpdated();
+    }
 }

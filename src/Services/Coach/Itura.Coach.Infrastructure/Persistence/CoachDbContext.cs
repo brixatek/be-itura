@@ -9,6 +9,8 @@ public sealed class CoachDbContext(DbContextOptions<CoachDbContext> options, IPu
     : DbContext(options)
 {
     public DbSet<CoachProfile> Coaches => Set<CoachProfile>();
+    public DbSet<CoachAvailability> CoachAvailabilities => Set<CoachAvailability>();
+    public DbSet<CoachBlockedTime> CoachBlockedTimes => Set<CoachBlockedTime>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

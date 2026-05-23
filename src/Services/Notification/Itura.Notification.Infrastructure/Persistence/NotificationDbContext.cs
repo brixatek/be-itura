@@ -9,6 +9,7 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
     : DbContext(options)
 {
     public DbSet<UserNotification> Notifications => Set<UserNotification>();
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

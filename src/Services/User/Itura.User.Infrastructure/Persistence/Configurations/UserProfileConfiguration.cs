@@ -25,6 +25,15 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
             .HasMaxLength(20);
         builder.Property(p => p.OnboardingCompleted).HasColumnName("onboarding_completed").HasDefaultValue(false);
 
+        builder.Property(p => p.TotalXp).HasColumnName("total_xp").HasDefaultValue(0);
+        builder.Property(p => p.WellnessLevel).HasColumnName("wellness_level").HasDefaultValue(1);
+        builder.Property(p => p.IsAnonymized).HasColumnName("is_anonymized").HasDefaultValue(false);
+        builder.Property(p => p.CreatedAt).HasColumnName("created_at");
+        builder.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+        builder.Property(p => p.DeletedAt).HasColumnName("deleted_at");
+
+        builder.HasQueryFilter(p => !p.IsDeleted);
+
         builder.Property(p => p.Language).HasColumnName("language").HasMaxLength(10).HasDefaultValue("en");
         builder.Property(p => p.EmailNotifications).HasColumnName("email_notifications").HasDefaultValue(true);
         builder.Property(p => p.PushNotifications).HasColumnName("push_notifications").HasDefaultValue(true);

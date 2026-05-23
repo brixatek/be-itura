@@ -9,6 +9,7 @@ public sealed class JournalDbContext(DbContextOptions<JournalDbContext> options,
     : DbContext(options)
 {
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalCoachShare> JournalCoachShares => Set<JournalCoachShare>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

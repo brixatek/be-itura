@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+        services.AddScoped<IAuthAuditLogRepository, AuthAuditLogRepository>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
         // Redis
@@ -41,6 +42,12 @@ public static class DependencyInjection
         // JWT
         services.Configure<JwtOptions>(config.GetSection(JwtOptions.Section));
         services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<ITotpService, TotpService>();
+
+        // Google OAuth
+        services.Configure<GoogleOAuthOptions>(config.GetSection(GoogleOAuthOptions.Section));
+        services.AddHttpClient("Google");
+        services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
 
         // JWT bearer authentication
         var jwtSection = config.GetSection(JwtOptions.Section);
@@ -68,7 +75,11 @@ public static class DependencyInjection
                 });
         }
 
-        services.AddAuthorization();
+        services.AddAuthorization(opts =>
+        {
+            opts.AddPolicy("RequireAdmin", policy =>
+                policy.RequireClaim("role", "Admin", "SuperAdmin"));
+        });
 
         // Email
         services.Configure<EmailOptions>(config.GetSection(EmailOptions.Section));

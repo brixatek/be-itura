@@ -7,7 +7,8 @@ namespace Itura.User.Application.Features.Users.UpdatePreferences;
 
 internal sealed class UpdatePreferencesCommandHandler(
     IUserProfileRepository profileRepository,
-    IUserUnitOfWork unitOfWork) : IRequestHandler<UpdatePreferencesCommand, Result>
+    IUserUnitOfWork unitOfWork,
+    IPreferencesCache cache) : IRequestHandler<UpdatePreferencesCommand, Result>
 {
     public async Task<Result> Handle(UpdatePreferencesCommand request, CancellationToken cancellationToken)
     {
@@ -24,6 +25,7 @@ internal sealed class UpdatePreferencesCommandHandler(
 
         profileRepository.Update(profile);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await cache.RemoveAsync(request.AccountId, cancellationToken);
 
         return Result.Success();
     }
