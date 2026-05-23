@@ -1,0 +1,6 @@
+@Itura.Notification.API_HostAddress = http://localhost:5239
+
+GET {{Itura.Notification.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

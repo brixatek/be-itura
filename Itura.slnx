@@ -1,0 +1,90 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/AI/">
+    <Project Path="src/Services/AI/Itura.AI.API/Itura.AI.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Analytics/">
+    <Project Path="src/Services/Analytics/Itura.Analytics.API/Itura.Analytics.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Auth/">
+    <Project Path="src/Services/Auth/Itura.Auth.API/Itura.Auth.API.csproj" />
+    <Project Path="src/Services/Auth/Itura.Auth.Application/Itura.Auth.Application.csproj" />
+    <Project Path="src/Services/Auth/Itura.Auth.Domain/Itura.Auth.Domain.csproj" />
+    <Project Path="src/Services/Auth/Itura.Auth.Infrastructure/Itura.Auth.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Booking/">
+    <Project Path="src/Services/Booking/Itura.Booking.API/Itura.Booking.API.csproj" />
+    <Project Path="src/Services/Booking/Itura.Booking.Application/Itura.Booking.Application.csproj" />
+    <Project Path="src/Services/Booking/Itura.Booking.Domain/Itura.Booking.Domain.csproj" />
+    <Project Path="src/Services/Booking/Itura.Booking.Infrastructure/Itura.Booking.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Coach/">
+    <Project Path="src/Services/Coach/Itura.Coach.API/Itura.Coach.API.csproj" />
+    <Project Path="src/Services/Coach/Itura.Coach.Application/Itura.Coach.Application.csproj" />
+    <Project Path="src/Services/Coach/Itura.Coach.Domain/Itura.Coach.Domain.csproj" />
+    <Project Path="src/Services/Coach/Itura.Coach.Infrastructure/Itura.Coach.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Community/">
+    <Project Path="src/Services/Community/Itura.Community.API/Itura.Community.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Content/">
+    <Project Path="src/Services/Content/Itura.Content.API/Itura.Content.API.csproj" />
+    <Project Path="src/Services/Content/Itura.Content.Application/Itura.Content.Application.csproj" />
+    <Project Path="src/Services/Content/Itura.Content.Domain/Itura.Content.Domain.csproj" />
+    <Project Path="src/Services/Content/Itura.Content.Infrastructure/Itura.Content.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Corporate/">
+    <Project Path="src/Services/Corporate/Itura.Corporate.API/Itura.Corporate.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Gamification/">
+    <Project Path="src/Services/Gamification/Itura.Gamification.API/Itura.Gamification.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Gateway/">
+    <Project Path="src/Services/Gateway/Itura.Gateway/Itura.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Journal/">
+    <Project Path="src/Services/Journal/Itura.Journal.API/Itura.Journal.API.csproj" />
+    <Project Path="src/Services/Journal/Itura.Journal.Application/Itura.Journal.Application.csproj" />
+    <Project Path="src/Services/Journal/Itura.Journal.Domain/Itura.Journal.Domain.csproj" />
+    <Project Path="src/Services/Journal/Itura.Journal.Infrastructure/Itura.Journal.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Media/">
+    <Project Path="src/Services/Media/Itura.Media.API/Itura.Media.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Mood/">
+    <Project Path="src/Services/Mood/Itura.Mood.API/Itura.Mood.API.csproj" />
+    <Project Path="src/Services/Mood/Itura.Mood.Application/Itura.Mood.Application.csproj" />
+    <Project Path="src/Services/Mood/Itura.Mood.Domain/Itura.Mood.Domain.csproj" />
+    <Project Path="src/Services/Mood/Itura.Mood.Infrastructure/Itura.Mood.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Notification/">
+    <Project Path="src/Services/Notification/Itura.Notification.API/Itura.Notification.API.csproj" />
+    <Project Path="src/Services/Notification/Itura.Notification.Application/Itura.Notification.Application.csproj" />
+    <Project Path="src/Services/Notification/Itura.Notification.Domain/Itura.Notification.Domain.csproj" />
+    <Project Path="src/Services/Notification/Itura.Notification.Infrastructure/Itura.Notification.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Payment/">
+    <Project Path="src/Services/Payment/Itura.Payment.API/Itura.Payment.API.csproj" />
+    <Project Path="src/Services/Payment/Itura.Payment.Application/Itura.Payment.Application.csproj" />
+    <Project Path="src/Services/Payment/Itura.Payment.Domain/Itura.Payment.Domain.csproj" />
+    <Project Path="src/Services/Payment/Itura.Payment.Infrastructure/Itura.Payment.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Search/">
+    <Project Path="src/Services/Search/Itura.Search.API/Itura.Search.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/User/">
+    <Project Path="src/Services/User/Itura.User.API/Itura.User.API.csproj" />
+    <Project Path="src/Services/User/Itura.User.Application/Itura.User.Application.csproj" />
+    <Project Path="src/Services/User/Itura.User.Domain/Itura.User.Domain.csproj" />
+    <Project Path="src/Services/User/Itura.User.Infrastructure/Itura.User.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Itura.Contracts/Itura.Contracts.csproj" />
+    <Project Path="src/Shared/Itura.SharedKernel/Itura.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Itura.Auth.Integration.Tests/Itura.Auth.Integration.Tests.csproj" />
+    <Project Path="tests/Itura.Auth.Unit.Tests/Itura.Auth.Unit.Tests.csproj" />
+  </Folder>
+</Solution>

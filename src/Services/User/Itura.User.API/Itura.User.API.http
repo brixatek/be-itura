@@ -1,0 +1,6 @@
+@Itura.User.API_HostAddress = http://localhost:5208
+
+GET {{Itura.User.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

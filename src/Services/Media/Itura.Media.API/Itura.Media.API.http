@@ -1,0 +1,6 @@
+@Itura.Media.API_HostAddress = http://localhost:5098
+
+GET {{Itura.Media.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,6 @@
+@Itura.Analytics.API_HostAddress = http://localhost:5110
+
+GET {{Itura.Analytics.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

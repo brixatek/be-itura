@@ -1,0 +1,6 @@
+@Itura.Payment.API_HostAddress = http://localhost:5254
+
+GET {{Itura.Payment.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

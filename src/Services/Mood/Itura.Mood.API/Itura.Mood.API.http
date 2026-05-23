@@ -1,0 +1,6 @@
+@Itura.Mood.API_HostAddress = http://localhost:5160
+
+GET {{Itura.Mood.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
