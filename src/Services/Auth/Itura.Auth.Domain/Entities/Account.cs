@@ -13,6 +13,7 @@ public sealed class Account : AggregateRoot
     private Account() { } // EF Core
 
     public string Email { get; private set; } = string.Empty;
+    public string FullName { get; private set; } = string.Empty;
     public string? PasswordHash { get; private set; }
     public bool EmailVerified { get; private set; }
     public string? EmailVerifyToken { get; private set; }
@@ -39,6 +40,7 @@ public sealed class Account : AggregateRoot
         {
             Id = Guid.NewGuid(),
             Email = email.ToLowerInvariant(),
+            FullName = fullName,
             PasswordHash = passwordHash,
             EmailVerifyToken = emailVerifyToken,
             EmailVerifyExpiry = DateTime.UtcNow.AddHours(24),

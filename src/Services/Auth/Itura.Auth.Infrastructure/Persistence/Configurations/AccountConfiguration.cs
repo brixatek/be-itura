@@ -17,6 +17,8 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.Email).HasColumnName("email").HasMaxLength(255).IsRequired();
         builder.HasIndex(a => a.Email).IsUnique();
 
+        builder.Property(a => a.FullName).HasColumnName("full_name").HasMaxLength(255).IsRequired().HasDefaultValue(string.Empty);
+
         builder.Property(a => a.PasswordHash).HasColumnName("password_hash").HasMaxLength(255);
         builder.Property(a => a.EmailVerified).HasColumnName("email_verified").HasDefaultValue(false);
         builder.Property(a => a.EmailVerifyToken).HasColumnName("email_verify_token").HasMaxLength(100);

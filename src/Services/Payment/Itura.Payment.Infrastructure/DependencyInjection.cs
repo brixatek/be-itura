@@ -53,6 +53,9 @@ public static class DependencyInjection
 
         services.AddMassTransit(x =>
         {
+            x.AddConsumer<BookingCompletedEventConsumer>();
+            x.AddConsumer<UserRegisteredEventConsumer>();
+
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 var host = config.GetConnectionString("RabbitMQ") ?? "localhost";

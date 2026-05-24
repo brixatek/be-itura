@@ -1,7 +1,9 @@
 using Itura.AI.Application.Common.Interfaces;
 using Itura.AI.Domain.Entities;
 using Itura.AI.Domain.Repositories;
+using Itura.Contracts.AI;
 using Itura.SharedKernel.Results;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
@@ -12,6 +14,7 @@ internal sealed class SendMessageCommandHandler(
     IConversationRepository conversations,
     IAICompletionService aiService,
     IAIRateLimiter rateLimiter,
+    IPublishEndpoint publishEndpoint,
     ILogger<SendMessageCommandHandler> logger)
     : IRequestHandler<SendMessageCommand, Result<SendMessageResult>>
 {
@@ -64,6 +67,14 @@ internal sealed class SendMessageCommandHandler(
         {
             logger.LogWarning("Crisis keywords detected for user {UserId} in conversation {ConversationId}",
                 request.UserId, conversation.Id);
+
+            var snippet = request.Message.Length > 100
+                ? request.Message[..100] + "..."
+                : request.Message;
+
+            await publishEndpoint.Publish(new CrisisDetectedEvent(
+                request.UserId, snippet, "AI", DateTime.UtcNow), cancellationToken);
+
             reply = CrisisOverrideResponse;
         }
         else

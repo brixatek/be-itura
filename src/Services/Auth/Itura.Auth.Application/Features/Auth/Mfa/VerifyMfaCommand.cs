@@ -60,7 +60,7 @@ internal sealed class VerifyMfaCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var tokens = new AuthTokensDto(accessToken, refreshRaw, 900);
-        var user = new AuthUserDto(account.Id, account.Email, string.Empty, account.Role.ToString(), "Free", false, 1);
+        var user = new AuthUserDto(account.Id, account.Email, account.FullName, account.Role.ToString(), "Free", false, 1);
         return Result.Success(new LoginResponseDto(tokens, user));
     }
 }

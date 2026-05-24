@@ -1,10 +1,12 @@
 using Itura.Contracts.Booking;
+using Itura.Contracts.Payment;
 using MassTransit;
 
 namespace Itura.Booking.Infrastructure.Sagas;
 
 public sealed class BookingStateMachine : MassTransitStateMachine<BookingState>
 {
+    public State AwaitingPayment { get; private set; } = null!;
     public State Created { get; private set; } = null!;
     public State Confirmed { get; private set; } = null!;
     public State Completed { get; private set; } = null!;
@@ -14,6 +16,8 @@ public sealed class BookingStateMachine : MassTransitStateMachine<BookingState>
     public Event<BookingConfirmedEvent> BookingConfirmed { get; private set; } = null!;
     public Event<BookingCompletedEvent> BookingCompleted { get; private set; } = null!;
     public Event<BookingCancelledEvent> BookingCancelled { get; private set; } = null!;
+    public Event<PaymentCompletedEvent> PaymentCompleted { get; private set; } = null!;
+    public Event<PaymentFailedEvent> PaymentFailed { get; private set; } = null!;
 
     public BookingStateMachine()
     {
@@ -23,7 +27,10 @@ public sealed class BookingStateMachine : MassTransitStateMachine<BookingState>
         Event(() => BookingConfirmed, x => x.CorrelateById(ctx => ctx.Message.BookingId));
         Event(() => BookingCompleted, x => x.CorrelateById(ctx => ctx.Message.BookingId));
         Event(() => BookingCancelled, x => x.CorrelateById(ctx => ctx.Message.BookingId));
+        Event(() => PaymentCompleted, x => x.CorrelateById(ctx => ctx.Message.BookingId));
+        Event(() => PaymentFailed, x => x.CorrelateById(ctx => ctx.Message.BookingId));
 
+        // Booking created → wait for client to complete payment before coach can confirm
         Initially(
             When(BookingCreated)
                 .Then(ctx =>
@@ -37,8 +44,30 @@ public sealed class BookingStateMachine : MassTransitStateMachine<BookingState>
                     ctx.Saga.CreatedAt = ctx.Message.CreatedAt;
                     ctx.Saga.UpdatedAt = DateTime.UtcNow;
                 })
-                .TransitionTo(Created));
+                .TransitionTo(AwaitingPayment));
 
+        // Payment confirmed → booking moves to Created (awaiting coach confirmation)
+        // Payment failed → booking cancelled automatically
+        During(AwaitingPayment,
+            When(PaymentCompleted)
+                .Then(ctx => ctx.Saga.UpdatedAt = DateTime.UtcNow)
+                .TransitionTo(Created),
+            When(PaymentFailed)
+                .Then(ctx =>
+                {
+                    ctx.Saga.CancellationReason = ctx.Message.FailureReason ?? "Payment failed.";
+                    ctx.Saga.UpdatedAt = DateTime.UtcNow;
+                })
+                .TransitionTo(Cancelled),
+            When(BookingCancelled)
+                .Then(ctx =>
+                {
+                    ctx.Saga.CancellationReason = ctx.Message.CancellationReason;
+                    ctx.Saga.UpdatedAt = DateTime.UtcNow;
+                })
+                .TransitionTo(Cancelled));
+
+        // Coach confirms or cancels after payment is received
         During(Created,
             When(BookingConfirmed)
                 .Then(ctx =>
@@ -67,7 +96,7 @@ public sealed class BookingStateMachine : MassTransitStateMachine<BookingState>
                 })
                 .TransitionTo(Cancelled));
 
-        // Allow rescheduled bookings (re-confirmed after cancel revert to Pending → Created)
+        // Allow rescheduling: client pays again and booking re-enters AwaitingPayment
         During(Cancelled,
             When(BookingCreated)
                 .Then(ctx =>
@@ -76,7 +105,7 @@ public sealed class BookingStateMachine : MassTransitStateMachine<BookingState>
                     ctx.Saga.CancellationReason = null;
                     ctx.Saga.UpdatedAt = DateTime.UtcNow;
                 })
-                .TransitionTo(Created));
+                .TransitionTo(AwaitingPayment));
 
         SetCompletedWhenFinalized();
     }
