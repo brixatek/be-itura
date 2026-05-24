@@ -7,6 +7,8 @@ using Itura.Notification.Infrastructure.Services;
 // Aliases for ambiguous types
 using IDeviceTokenRepository = Itura.Notification.Domain.Repositories.IDeviceTokenRepository;
 using DeviceTokenRepository = Itura.Notification.Infrastructure.Repositories.DeviceTokenRepository;
+using INotificationPreferenceRepository = Itura.Notification.Domain.Repositories.INotificationPreferenceRepository;
+using NotificationPreferenceRepository = Itura.Notification.Infrastructure.Repositories.NotificationPreferenceRepository;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationUnitOfWork, UnitOfWork>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
+        services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
 
         // Email
         services.Configure<EmailOptions>(config.GetSection(EmailOptions.Section));
@@ -43,6 +46,8 @@ public static class DependencyInjection
         {
             x.AddConsumer<UserRegisteredEventConsumer>();
             x.AddConsumer<SendNotificationRequestConsumer>();
+            x.AddConsumer<LevelUpEventConsumer>();
+            x.AddConsumer<BadgeEarnedEventConsumer>();
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 var host = config.GetConnectionString("RabbitMQ") ?? "localhost";

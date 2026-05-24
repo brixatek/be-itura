@@ -27,7 +27,7 @@ internal sealed class CreatePostCommandHandler(
 
         var result = Domain.Entities.CommunityPost.Create(
             request.Body, postType, request.AuthorUserId,
-            request.Title, request.Tags, request.IsPublic);
+            request.Title, request.Tags, request.IsPublic, request.IsAnonymous);
 
         if (result.IsFailure)
             return Result.Failure<CommunityPostDto>(result.Error);

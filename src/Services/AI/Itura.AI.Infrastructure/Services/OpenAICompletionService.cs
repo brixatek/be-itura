@@ -85,7 +85,11 @@ internal sealed class OpenAICompletionService(
         }
     }
 
-    public async Task<string> CompleteAsync(string systemPrompt, string userMessage, CancellationToken ct = default)
+    public async Task<string> CompleteAsync(
+        string systemPrompt,
+        IEnumerable<(string Role, string Content)> history,
+        string userMessage,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(options.Value.ApiKey))
         {
@@ -95,7 +99,7 @@ internal sealed class OpenAICompletionService(
                 : MockReplies[Random.Shared.Next(MockReplies.Length)];
         }
 
-        var messages = BuildMessages(systemPrompt, [], userMessage);
+        var messages = BuildMessages(systemPrompt, history, userMessage);
         var requestBody = JsonSerializer.Serialize(new { model = options.Value.Model, messages, max_tokens = 500 });
 
         var client = httpClientFactory.CreateClient("OpenAI");

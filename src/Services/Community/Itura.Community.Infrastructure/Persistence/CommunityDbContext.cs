@@ -10,6 +10,8 @@ public sealed class CommunityDbContext(DbContextOptions<CommunityDbContext> opti
 {
     public DbSet<CommunityPost> Posts => Set<CommunityPost>();
     public DbSet<PostComment> Comments => Set<PostComment>();
+    public DbSet<PostReport> PostReports => Set<PostReport>();
+    public DbSet<PostReaction> PostReactions => Set<PostReaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

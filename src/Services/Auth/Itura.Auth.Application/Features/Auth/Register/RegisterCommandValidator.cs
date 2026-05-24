@@ -27,6 +27,9 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
 
         RuleFor(x => x.Timezone)
             .NotEmpty().WithMessage("Timezone is required.")
-            .MaximumLength(50);
+            .MaximumLength(50)
+            .Must(tz => TimeZoneInfo.GetSystemTimeZones().Any(t => t.Id == tz))
+            .WithMessage("Timezone must be a valid IANA timezone identifier (e.g. 'Africa/Lagos', 'UTC').")
+            .When(x => !string.IsNullOrWhiteSpace(x.Timezone));
     }
 }

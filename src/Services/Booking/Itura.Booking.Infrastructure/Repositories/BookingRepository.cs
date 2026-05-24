@@ -50,6 +50,19 @@ internal sealed class BookingRepository(BookingDbContext context) : IBookingRepo
         return query.ToListAsync(ct);
     }
 
+    public async Task<List<DateTime>> GetBookedSlotsForDayAsync(Guid coachUserId, DateOnly date, CancellationToken ct = default)
+    {
+        var dayStart = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+        return await context.BookingSessions
+            .Where(b => b.CoachUserId == coachUserId
+                     && b.ScheduledAt >= dayStart
+                     && b.ScheduledAt < dayEnd
+                     && b.Status != Itura.Booking.Domain.Enums.BookingStatus.Cancelled)
+            .Select(b => b.ScheduledAt)
+            .ToListAsync(ct);
+    }
+
     public async Task AddAsync(BookingSession session, CancellationToken ct = default) =>
         await context.BookingSessions.AddAsync(session, ct);
 

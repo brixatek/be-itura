@@ -9,4 +9,5 @@ public sealed record CreateJournalEntryCommand(
     string Content,
     IReadOnlyList<string> Tags,
     int? MoodScore,
-    bool IsPrivate) : IRequest<Result<Guid>>;
+    bool IsPrivate,
+    bool IsPremium = false) : IRequest<Result<Guid>>;

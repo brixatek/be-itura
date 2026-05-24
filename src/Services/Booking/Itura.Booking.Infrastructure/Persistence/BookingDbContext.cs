@@ -1,4 +1,5 @@
 using Itura.Booking.Domain.Entities;
+using Itura.Booking.Infrastructure.Sagas;
 using Itura.SharedKernel.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ public sealed class BookingDbContext(DbContextOptions<BookingDbContext> options,
     : DbContext(options)
 {
     public DbSet<BookingSession> BookingSessions => Set<BookingSession>();
+    public DbSet<BookingState> BookingSagaStates => Set<BookingState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

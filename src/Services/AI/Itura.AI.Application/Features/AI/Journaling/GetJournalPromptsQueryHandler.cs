@@ -19,7 +19,7 @@ internal sealed class GetJournalPromptsQueryHandler(
         if (cached is not null)
             return Result.Success(cached);
 
-        var raw = await aiService.CompleteAsync(SystemPrompt,
+        var raw = await aiService.CompleteAsync(SystemPrompt, [],
             "Generate 3 diverse journaling prompts for a wellness app user.", cancellationToken);
 
         var prompts = ParsePrompts(raw);

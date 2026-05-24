@@ -1,14 +1,17 @@
+using Itura.Contracts.Gamification;
 using Itura.SharedKernel.Results;
 using Itura.User.Application.Common.Interfaces;
 using Itura.User.Domain.Entities;
 using Itura.User.Domain.Repositories;
+using MassTransit;
 using MediatR;
 
 namespace Itura.User.Application.Features.Gamification;
 
 internal sealed class AwardBadgeCommandHandler(
     IBadgeRepository badgeRepository,
-    IUserUnitOfWork unitOfWork)
+    IUserUnitOfWork unitOfWork,
+    IPublishEndpoint publishEndpoint)
     : IRequestHandler<AwardBadgeCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(AwardBadgeCommand request, CancellationToken cancellationToken)
@@ -24,6 +27,13 @@ internal sealed class AwardBadgeCommandHandler(
         var earned = BadgeEarned.Create(request.UserId, definition.Id);
         await badgeRepository.AddEarnedAsync(earned, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await publishEndpoint.Publish(new BadgeEarnedEvent(
+            request.UserId,
+            definition.Name,
+            definition.Description,
+            definition.IconUrl,
+            DateTime.UtcNow), cancellationToken);
 
         return Result.Success(true);
     }

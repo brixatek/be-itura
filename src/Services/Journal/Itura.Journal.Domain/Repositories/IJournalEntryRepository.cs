@@ -11,6 +11,7 @@ public interface IJournalEntryRepository
         string? tag = null, DateTime? from = null, DateTime? to = null,
         CancellationToken ct = default);
     Task<IReadOnlyList<string>> GetTagsByUserIdAsync(Guid userId, CancellationToken ct = default);
+    Task<int> CountByUserIdAsync(Guid userId, CancellationToken ct = default);
     Task AddAsync(JournalEntry entry, CancellationToken ct = default);
     void Update(JournalEntry entry);
 }

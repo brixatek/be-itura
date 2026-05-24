@@ -107,6 +107,16 @@ public sealed class AuthController(ISender sender) : ControllerBase
         return result.IsSuccess ? Ok(ApiResponse.Ok(result.Value)) : Problem(result);
     }
 
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request, CancellationToken ct)
+    {
+        var result = await sender.Send(new ResendVerificationCommand(request.Email), ct);
+        return result.IsSuccess
+            ? Ok(ApiResponse.Ok("If that email is registered and unverified, a new verification email has been sent."))
+            : Problem(result);
+    }
+
     [HttpPost("refresh-token")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -189,6 +199,7 @@ public sealed record MfaVerifySetupRequest(string Code);
 public sealed record MfaVerifyRequest(Guid AccountId, string Code, bool UseBackupCode = false, string? DeviceInfo = null);
 public sealed record MfaDisableRequest(string Password);
 public sealed record GoogleOAuthRequest(string Code, string RedirectUri, string? DeviceInfo = null);
+public sealed record ResendVerificationRequest(string Email);
 
 // ─── Standard response wrapper ────────────────────────────────────────────────
 

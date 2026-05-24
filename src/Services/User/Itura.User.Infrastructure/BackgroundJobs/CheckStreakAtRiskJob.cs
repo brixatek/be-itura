@@ -1,4 +1,6 @@
+using Itura.Contracts.Notification;
 using Itura.User.Domain.Repositories;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -32,19 +34,24 @@ public sealed class CheckStreakAtRiskJob(
         {
             using var scope = scopeFactory.CreateScope();
             var streakRepo = scope.ServiceProvider.GetRequiredService<IStreakRepository>();
+            var publishEndpoint = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var atRisk = await streakRepo.GetAtRiskAsync(today, ct);
 
             logger.LogInformation("Found {Count} users with streaks at risk", atRisk.Count);
 
-            // Publish StreakRiskEvent per user — notification-service sends push at 7pm
-            // Currently logging; integrate MassTransit publish when notification-service is ready
             foreach (var streak in atRisk)
             {
                 logger.LogInformation(
                     "Streak at risk: UserId={UserId} Type={Type} Current={Current}",
                     streak.UserProfileId, streak.StreakType, streak.CurrentStreak);
+
+                await publishEndpoint.Publish(new SendNotificationRequest(
+                    streak.UserProfileId,
+                    "Streak at risk!",
+                    $"Your {streak.StreakType} streak of {streak.CurrentStreak} days is at risk. Log activity today to keep it going!",
+                    "Push"), ct);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

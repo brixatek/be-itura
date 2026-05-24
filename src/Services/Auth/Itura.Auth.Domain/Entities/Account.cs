@@ -159,6 +159,17 @@ public sealed class Account : AggregateRoot
         return Result.Success();
     }
 
+    public Result RefreshVerifyToken(string newToken)
+    {
+        if (EmailVerified)
+            return Result.Failure(Error.Conflict("Auth.AlreadyVerified", "Email is already verified."));
+
+        EmailVerifyToken = newToken;
+        EmailVerifyExpiry = DateTime.UtcNow.AddHours(24);
+        MarkUpdated();
+        return Result.Success();
+    }
+
     public Result Suspend(string? reason)
     {
         if (Status == AccountStatus.Suspended)

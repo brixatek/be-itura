@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.AddStackExchangeRedisCache(opts => opts.Configuration = redisConn);
         services.AddScoped<IPreferencesCache, PreferencesCache>();
         services.AddScoped<ILeaderboardCache, LeaderboardCache>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IBadgeEvaluationService, BadgeEvaluationService>();
 
         // Background jobs
         services.AddHostedService<CheckStreakAtRiskJob>();
@@ -54,6 +56,7 @@ public static class DependencyInjection
         services.AddMassTransit(x =>
         {
             x.AddConsumer<UserRegisteredEventConsumer>();
+            x.AddConsumer<JournalEntryCreatedConsumer>();
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 var host = config.GetConnectionString("RabbitMQ") ?? "localhost";

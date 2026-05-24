@@ -27,6 +27,8 @@ public static class DependencyInjection
         services.AddScoped<ICommunityUnitOfWork, UnitOfWork>();
         services.AddScoped<ICommunityPostRepository, CommunityPostRepository>();
         services.AddScoped<IPostCommentRepository, PostCommentRepository>();
+        services.AddScoped<IPostReportRepository, PostReportRepository>();
+        services.AddScoped<IPostReactionRepository, PostReactionRepository>();
         services.AddScoped<IContentModerationService, ContentModerationService>();
 
         services.AddMassTransit(x =>

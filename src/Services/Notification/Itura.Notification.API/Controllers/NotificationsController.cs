@@ -2,6 +2,7 @@ using Itura.Notification.Application.Features.Notifications.DeviceTokens;
 using Itura.Notification.Application.Features.Notifications.GetNotifications;
 using Itura.Notification.Application.Features.Notifications.MarkAllRead;
 using Itura.Notification.Application.Features.Notifications.MarkRead;
+using Itura.Notification.Application.Features.Notifications.UpdatePreferences;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,6 +60,32 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         var result = await sender.Send(new UnregisterDeviceTokenCommand(CurrentUserId, token), ct);
         return result.IsSuccess ? NoContent() : NotFound(new { error = result.Error.Message });
     }
+
+    // ─── Preferences ─────────────────────────────────────────────────────────
+
+    [HttpPut("preferences")]
+    public async Task<IActionResult> UpdatePreferences(
+        [FromBody] UpdatePreferencesRequest request,
+        CancellationToken ct = default)
+    {
+        TimeOnly? quietStart = request.QuietHoursStart.HasValue
+            ? TimeOnly.FromTimeSpan(request.QuietHoursStart.Value)
+            : null;
+        TimeOnly? quietEnd = request.QuietHoursEnd.HasValue
+            ? TimeOnly.FromTimeSpan(request.QuietHoursEnd.Value)
+            : null;
+
+        var result = await sender.Send(new UpdateNotificationPreferencesCommand(
+            CurrentUserId, request.PushEnabled, request.EmailEnabled, quietStart, quietEnd), ct);
+
+        return result.IsSuccess ? NoContent() : BadRequest(new { error = result.Error.Message });
+    }
 }
 
 public sealed record DeviceTokenRequest(string Token, string Platform);
+
+public sealed record UpdatePreferencesRequest(
+    bool PushEnabled,
+    bool EmailEnabled,
+    TimeSpan? QuietHoursStart,
+    TimeSpan? QuietHoursEnd);

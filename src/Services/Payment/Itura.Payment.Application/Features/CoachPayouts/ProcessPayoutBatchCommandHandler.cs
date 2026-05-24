@@ -29,7 +29,7 @@ internal sealed class ProcessPayoutBatchCommandHandler(
                 if (bankAccount is null) { failed++; continue; }
 
                 var unpaidAmount = await repository.GetUnpaidEarningsTotalAsync(coachId, cancellationToken);
-                if (unpaidAmount <= 0) continue;
+                if (unpaidAmount < 1000m) continue; // minimum payout threshold: 1000 NGN
 
                 var bankCode = encryption.Decrypt(bankAccount.BankCodeEncrypted);
                 var accountNumber = encryption.Decrypt(bankAccount.AccountNumberEncrypted);

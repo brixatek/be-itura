@@ -7,6 +7,7 @@ namespace Itura.Auth.Application.Features.Admin;
 
 internal sealed class SuspendAccountCommandHandler(
     IAccountRepository repository,
+    IRefreshTokenRepository refreshTokenRepository,
     IAuthUnitOfWork unitOfWork)
     : IRequestHandler<SuspendAccountCommand, Result>,
       IRequestHandler<RestoreAccountCommand, Result>
@@ -20,6 +21,7 @@ internal sealed class SuspendAccountCommandHandler(
         if (result.IsFailure) return result;
 
         repository.Update(account);
+        await refreshTokenRepository.RevokeAllForAccountAsync(request.AccountId, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

@@ -5,6 +5,7 @@ using Itura.Booking.Infrastructure.BackgroundJobs;
 using Itura.Booking.Infrastructure.EventHandlers;
 using Itura.Booking.Infrastructure.Persistence;
 using Itura.Booking.Infrastructure.Repositories;
+using Itura.Booking.Infrastructure.Sagas;
 using Itura.Booking.Infrastructure.Services;
 using MassTransit;
 using MediatR;
@@ -40,10 +41,20 @@ public static class DependencyInjection
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false"));
         }
         services.AddScoped<ISlotReservationService, SlotReservationService>();
+        services.AddScoped<ICalendarService, IcsCalendarService>();
+        services.AddScoped<ICoachAvailabilityCache, CoachAvailabilityCache>();
         services.AddHostedService<SessionReminderJob>();
 
         services.AddMassTransit(x =>
         {
+            x.AddSagaStateMachine<BookingStateMachine, BookingState>()
+                .EntityFrameworkRepository(r =>
+                {
+                    r.ConcurrencyMode = ConcurrencyMode.Optimistic;
+                    r.ExistingDbContext<BookingDbContext>();
+                    r.UsePostgres();
+                });
+
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 var host = config.GetConnectionString("RabbitMQ") ?? "localhost";

@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IJournalUnitOfWork, UnitOfWork>();
         services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
         services.AddScoped<IJournalCoachShareRepository, JournalCoachShareRepository>();
+        services.AddScoped<IJournalTemplateRepository, JournalTemplateRepository>();
 
         // AES-256-GCM encryption for journal content
         services.Configure<EncryptionOptions>(config.GetSection(EncryptionOptions.Section));

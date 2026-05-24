@@ -10,4 +10,5 @@ public sealed record CreatePostCommand(
     Guid AuthorUserId,
     string? Title,
     List<string>? Tags,
-    bool IsPublic) : IRequest<Result<CommunityPostDto>>;
+    bool IsPublic,
+    bool IsAnonymous = false) : IRequest<Result<CommunityPostDto>>;

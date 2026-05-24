@@ -3,6 +3,8 @@ using Itura.Community.Application.Features.Posts.Commands.CreatePost;
 using Itura.Community.Application.Features.Posts.Commands.DeleteComment;
 using Itura.Community.Application.Features.Posts.Commands.DeletePost;
 using Itura.Community.Application.Features.Posts.Commands.LikePost;
+using Itura.Community.Application.Features.Posts.Commands.ReactToPost;
+using Itura.Community.Application.Features.Posts.Commands.ReportPost;
 using Itura.Community.Application.Features.Posts.Commands.UpdatePost;
 using Itura.Community.Application.Features.Posts.Queries.GetFeed;
 using Itura.Community.Application.Features.Posts.Queries.GetHotFeed;
@@ -27,7 +29,7 @@ public sealed class PostsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request, CancellationToken ct)
     {
         var result = await mediator.Send(new CreatePostCommand(
-            request.Body, request.PostType, GetUserId(), request.Title, request.Tags, request.IsPublic), ct);
+            request.Body, request.PostType, GetUserId(), request.Title, request.Tags, request.IsPublic, request.IsAnonymous), ct);
 
         if (result.IsFailure)
             return BadRequest(new { success = false, error = result.Error });
@@ -187,8 +189,51 @@ public sealed class PostsController(IMediator mediator) : ControllerBase
         }
         return NoContent();
     }
+
+    [HttpPost("{id:guid}/reactions")]
+    [Authorize]
+    public async Task<IActionResult> AddReaction(Guid id, [FromBody] ReactionRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ReactToPostCommand(id, GetUserId(), request.Emoji), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.EndsWith("NotFound")) return NotFound(new { success = false, error = result.Error });
+            if (result.Error.Code.EndsWith("AlreadyExists")) return Conflict(new { success = false, error = result.Error });
+            return BadRequest(new { success = false, error = result.Error });
+        }
+        return Ok(new { success = true });
+    }
+
+    [HttpDelete("{id:guid}/reactions")]
+    [Authorize]
+    public async Task<IActionResult> RemoveReaction(Guid id, [FromBody] ReactionRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ReactToPostCommand(id, GetUserId(), request.Emoji, Remove: true), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.EndsWith("NotFound")) return NotFound(new { success = false, error = result.Error });
+            return BadRequest(new { success = false, error = result.Error });
+        }
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/report")]
+    [Authorize]
+    public async Task<IActionResult> ReportPost(Guid id, [FromBody] ReportPostRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ReportPostCommand(id, GetUserId(), request.Reason), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.EndsWith("NotFound")) return NotFound(new { success = false, error = result.Error });
+            if (result.Error.Code.EndsWith("AlreadyReported")) return Conflict(new { success = false, error = result.Error });
+            return BadRequest(new { success = false, error = result.Error });
+        }
+        return Ok(new { success = true });
+    }
 }
 
-public sealed record CreatePostRequest(string Body, string PostType, string? Title, List<string>? Tags, bool IsPublic = true);
+public sealed record CreatePostRequest(string Body, string PostType, string? Title, List<string>? Tags, bool IsPublic = true, bool IsAnonymous = false);
 public sealed record UpdatePostRequest(string Body, string? Title, List<string>? Tags);
 public sealed record CreateCommentRequest(string Body);
+public sealed record ReportPostRequest(string Reason);
+public sealed record ReactionRequest(string Emoji);

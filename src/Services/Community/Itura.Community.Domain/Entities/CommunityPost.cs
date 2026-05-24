@@ -15,6 +15,7 @@ public sealed class CommunityPost : AggregateRoot
     public int LikeCount { get; private set; }
     public int CommentCount { get; private set; }
     public bool IsPublic { get; private set; }
+    public bool IsAnonymous { get; private set; }
 
     private CommunityPost() { }
 
@@ -24,7 +25,8 @@ public sealed class CommunityPost : AggregateRoot
         Guid authorUserId,
         string? title = null,
         List<string>? tags = null,
-        bool isPublic = true)
+        bool isPublic = true,
+        bool isAnonymous = false)
     {
         if (string.IsNullOrWhiteSpace(body))
             return Result.Failure<CommunityPost>(Error.Validation("CommunityPost.Body", "Body is required."));
@@ -39,7 +41,8 @@ public sealed class CommunityPost : AggregateRoot
             PostType = postType,
             AuthorUserId = authorUserId,
             Tags = tags ?? [],
-            IsPublic = isPublic
+            IsPublic = isPublic,
+            IsAnonymous = isAnonymous
         };
 
         post.RaiseDomainEvent(new CommunityPostCreatedDomainEvent(

@@ -5,10 +5,11 @@ public sealed record CommunityPostDto(
     string? Title,
     string Body,
     string PostType,
-    Guid AuthorUserId,
+    Guid? AuthorUserId,
     List<string> Tags,
     int LikeCount,
     int CommentCount,
     bool IsPublic,
+    bool IsAnonymous,
     DateTime CreatedAt,
     DateTime UpdatedAt);

@@ -73,7 +73,7 @@ internal sealed class SendMessageCommandHandler(
                 .TakeLast(10) // last 10 turns for context window management
                 .Select(m => (m.Role, m.Content));
 
-            reply = await aiService.CompleteAsync(SystemPrompt, request.Message, cancellationToken);
+            reply = await aiService.CompleteAsync(SystemPrompt, history, request.Message, cancellationToken);
         }
 
         conversation.AddMessage("assistant", reply);

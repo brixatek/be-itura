@@ -4,6 +4,7 @@ using Itura.Journal.Application.Features.Journal.DeleteEntry;
 using Itura.Journal.Application.Features.Journal.GetEntries;
 using Itura.Journal.Application.Features.Journal.GetEntry;
 using Itura.Journal.Application.Features.Journal.GetTags;
+using Itura.Journal.Application.Features.Journal.Templates;
 using Itura.Journal.Application.Features.Journal.UpdateEntry;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -22,12 +23,15 @@ public sealed class JournalController(ISender sender) : ControllerBase
             ?? User.FindFirstValue("sub")
             ?? throw new UnauthorizedAccessException());
 
+    private bool IsPremium =>
+        string.Equals(User.FindFirstValue("plan"), "premium", StringComparison.OrdinalIgnoreCase);
+
     [HttpPost]
     public async Task<IActionResult> CreateEntry([FromBody] CreateJournalEntryRequest request, CancellationToken ct = default)
     {
         var result = await sender.Send(new CreateJournalEntryCommand(
             CurrentUserId, request.Title, request.Content ?? string.Empty,
-            request.Tags ?? [], request.MoodScore, request.IsPrivate), ct);
+            request.Tags ?? [], request.MoodScore, request.IsPrivate, IsPremium), ct);
 
         if (result.IsFailure) return BadRequest(new { error = result.Error.Message });
         return CreatedAtAction(nameof(GetEntry), new { id = result.Value }, new { id = result.Value });
@@ -81,6 +85,14 @@ public sealed class JournalController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(new GetJournalTagsQuery(CurrentUserId), ct);
         return Ok(result.Value);
+    }
+
+    [HttpGet("templates")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetTemplates([FromQuery] string? category = null, CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetJournalTemplatesQuery(category), ct);
+        return Ok(new { success = true, data = result.Value });
     }
 
     [HttpPost("entries/{entryId:guid}/share/{coachId:guid}")]

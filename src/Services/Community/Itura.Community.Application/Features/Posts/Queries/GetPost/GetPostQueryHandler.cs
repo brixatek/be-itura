@@ -23,11 +23,12 @@ internal sealed class GetPostQueryHandler(ICommunityPostRepository repository)
         post.Title,
         post.Body,
         post.PostType.ToString(),
-        post.AuthorUserId,
+        post.IsAnonymous ? null : post.AuthorUserId,
         post.Tags,
         post.LikeCount,
         post.CommentCount,
         post.IsPublic,
+        post.IsAnonymous,
         post.CreatedAt,
         post.UpdatedAt);
 }

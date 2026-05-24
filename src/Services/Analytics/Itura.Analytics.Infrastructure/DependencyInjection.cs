@@ -1,5 +1,6 @@
 using Itura.Analytics.Application.Common.Interfaces;
 using Itura.Analytics.Domain.Repositories;
+using Itura.Analytics.Infrastructure.BackgroundJobs;
 using Itura.Analytics.Infrastructure.Consumers;
 using Itura.Analytics.Infrastructure.Persistence;
 using Itura.Analytics.Infrastructure.Repositories;
@@ -23,6 +24,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAnalyticsUnitOfWork, UnitOfWork>();
         services.AddScoped<IAnalyticsEventRepository, AnalyticsEventRepository>();
+        services.AddHostedService<NightlyAggregationJob>();
 
         services.AddMassTransit(x =>
         {

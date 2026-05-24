@@ -3,8 +3,11 @@ using Itura.Booking.Application.Features.Bookings.CompleteBooking;
 using Itura.Booking.Application.Features.Bookings.ConfirmBooking;
 using Itura.Booking.Application.Features.Bookings.CreateBooking;
 using Itura.Booking.Application.Features.Bookings.GetBooking;
+using Itura.Booking.Application.Features.Bookings.GetCoachAvailability;
 using Itura.Booking.Application.Features.Bookings.GetCoachBookings;
 using Itura.Booking.Application.Features.Bookings.GetMyBookings;
+using Itura.Booking.Application.Common.Interfaces;
+using Itura.Booking.Application.Features.Bookings.RescheduleBooking;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +18,7 @@ namespace Itura.Booking.API.Controllers;
 [ApiController]
 [Route("api/v1/bookings")]
 [Authorize]
-public sealed class BookingsController(IMediator mediator) : ControllerBase
+public sealed class BookingsController(IMediator mediator, ICalendarService calendarService) : ControllerBase
 {
     private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -88,6 +91,19 @@ public sealed class BookingsController(IMediator mediator) : ControllerBase
         return Ok(new { success = true });
     }
 
+    [HttpPut("{id:guid}/reschedule")]
+    public async Task<IActionResult> RescheduleBooking(Guid id, [FromBody] RescheduleBookingRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new RescheduleBookingCommand(id, GetUserId(), request.NewScheduledAt), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.EndsWith("NotFound")) return NotFound(new { success = false, error = result.Error });
+            if (result.Error.Code == "Auth.Forbidden" || result.Error.Code == "Booking.Reschedule") return Forbid();
+            return BadRequest(new { success = false, error = result.Error });
+        }
+        return Ok(new { success = true });
+    }
+
     [HttpPut("{id:guid}/complete")]
     public async Task<IActionResult> CompleteBooking(Guid id, CancellationToken ct)
     {
@@ -100,6 +116,44 @@ public sealed class BookingsController(IMediator mediator) : ControllerBase
         }
         return Ok(new { success = true });
     }
+
+    [HttpGet("coach/{coachUserId:guid}/availability")]
+    public async Task<IActionResult> GetCoachAvailability(
+        Guid coachUserId,
+        [FromQuery] string date,
+        CancellationToken ct)
+    {
+        if (!DateOnly.TryParse(date, out var parsedDate))
+            return BadRequest(new { success = false, error = "Invalid date format. Use yyyy-MM-dd." });
+
+        var result = await mediator.Send(new GetCoachAvailabilityQuery(coachUserId, parsedDate), ct);
+        return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpGet("{id:guid}/ics")]
+    public async Task<IActionResult> GetIcsInvite(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetBookingQuery(id, GetUserId()), ct);
+        if (result.IsFailure)
+        {
+            if (result.Error.Code.EndsWith("NotFound")) return NotFound(new { success = false, error = result.Error });
+            if (result.Error.Code == "Auth.Forbidden") return Forbid();
+            return BadRequest(new { success = false, error = result.Error });
+        }
+
+        var booking = result.Value;
+        var ics = calendarService.GenerateIcs(
+            booking.Id,
+            booking.ScheduledAt,
+            booking.DurationMinutes,
+            "Itura Coaching Session",
+            $"Your wellness coaching session scheduled on {booking.ScheduledAt:f}.");
+
+        return File(
+            System.Text.Encoding.UTF8.GetBytes(ics),
+            "text/calendar",
+            $"booking-{id:N}.ics");
+    }
 }
 
 public sealed record CreateBookingRequest(
@@ -111,3 +165,4 @@ public sealed record CreateBookingRequest(
     string Currency);
 
 public sealed record CancelBookingRequest(string? Reason);
+public sealed record RescheduleBookingRequest(DateTime NewScheduledAt);

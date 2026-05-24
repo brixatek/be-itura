@@ -10,6 +10,7 @@ public sealed class JournalDbContext(DbContextOptions<JournalDbContext> options,
 {
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
     public DbSet<JournalCoachShare> JournalCoachShares => Set<JournalCoachShare>();
+    public DbSet<JournalTemplate> JournalTemplates => Set<JournalTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

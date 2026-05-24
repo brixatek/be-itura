@@ -7,5 +7,8 @@ public enum NotificationChannel
     BookingReminder,
     SessionCompleted,
     GoalAchieved,
-    SystemAlert
+    SystemAlert,
+    LevelUp,
+    StreakAtRisk,
+    BadgeEarned
 }

@@ -50,6 +50,11 @@ internal sealed class JournalEntryRepository(JournalDbContext context) : IJourna
         return allTags.SelectMany(t => t).Distinct().OrderBy(t => t).ToList();
     }
 
+    public async Task<int> CountByUserIdAsync(Guid userId, CancellationToken ct = default) =>
+        await context.JournalEntries
+            .Where(e => e.UserId == userId)
+            .CountAsync(ct);
+
     public async Task AddAsync(JournalEntry entry, CancellationToken ct = default) =>
         await context.JournalEntries.AddAsync(entry, ct);
 

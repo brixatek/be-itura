@@ -10,6 +10,7 @@ public interface IAICompletionService
 
     Task<string> CompleteAsync(
         string systemPrompt,
+        IEnumerable<(string Role, string Content)> history,
         string userMessage,
         CancellationToken ct = default);
 }

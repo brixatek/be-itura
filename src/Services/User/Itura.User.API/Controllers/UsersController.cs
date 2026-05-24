@@ -6,6 +6,7 @@ using Itura.User.Application.Features.Users.GetPreferences;
 using Itura.User.Application.Features.Users.GetProfile;
 using Itura.User.Application.Features.Users.UpdatePreferences;
 using Itura.User.Application.Features.Users.UpdateProfile;
+using Itura.User.Application.Features.Users.UploadAvatar;
 using Itura.User.Application.Features.Gamification;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -45,6 +46,26 @@ public sealed class UsersController(ISender sender) : ControllerBase
 
         var result = await sender.Send(command, ct);
         return result.IsSuccess ? Ok() : Problem(result);
+    }
+
+    [HttpPut("me/avatar")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { success = false, error = "No file provided." });
+
+        var command = new UploadAvatarCommand(
+            CurrentUserId,
+            file.OpenReadStream(),
+            file.FileName,
+            file.ContentType,
+            file.Length);
+
+        var result = await sender.Send(command, ct);
+        return result.IsSuccess
+            ? Ok(new { success = true, data = new { avatarUrl = result.Value } })
+            : Problem(result);
     }
 
     [HttpDelete("me")]

@@ -9,6 +9,7 @@ namespace Itura.Booking.Application.Features.Bookings.CreateBooking;
 internal sealed class CreateBookingCommandHandler(
     IBookingRepository repository,
     ISlotReservationService slotReservation,
+    ICoachAvailabilityCache availabilityCache,
     IBookingUnitOfWork unitOfWork)
     : IRequestHandler<CreateBookingCommand, Result<Guid>>
 {
@@ -31,6 +32,9 @@ internal sealed class CreateBookingCommandHandler(
 
         await repository.AddAsync(booking, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await availabilityCache.InvalidateAsync(
+            request.CoachUserId, DateOnly.FromDateTime(request.ScheduledAt), cancellationToken);
 
         return Result.Success(booking.Id);
     }

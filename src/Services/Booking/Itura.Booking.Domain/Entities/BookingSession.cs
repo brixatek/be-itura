@@ -93,4 +93,23 @@ public sealed class BookingSession : AggregateRoot
         RaiseDomainEvent(new BookingCompletedDomainEvent(Id, CoachId, ClientUserId, Price, Currency));
         return Result.Success();
     }
+
+    public Result Reschedule(DateTime newScheduledAt, Guid requestedByUserId)
+    {
+        if (requestedByUserId != ClientUserId && requestedByUserId != CoachUserId)
+            return Result.Failure(Error.Forbidden("Booking.Reschedule", "Only the client or coach can reschedule this booking."));
+
+        if (Status is BookingStatus.Cancelled or BookingStatus.Completed)
+            return Result.Failure(Error.Validation("Booking.Reschedule", "Cannot reschedule a cancelled or completed booking."));
+
+        if (newScheduledAt.ToUniversalTime() <= DateTime.UtcNow)
+            return Result.Failure(Error.Validation("Booking.Reschedule.ScheduledAt", "New time must be in the future."));
+
+        ScheduledAt = newScheduledAt.ToUniversalTime();
+        Status = BookingStatus.Pending;
+        Reminder24hSent = false;
+        Reminder1hSent = false;
+        MarkUpdated();
+        return Result.Success();
+    }
 }

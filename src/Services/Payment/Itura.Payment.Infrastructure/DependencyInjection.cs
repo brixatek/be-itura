@@ -1,6 +1,7 @@
 using Itura.Payment.Application.Common.Interfaces;
 using Itura.Payment.Domain.Events;
 using Itura.Payment.Domain.Repositories;
+using Itura.Payment.Infrastructure.BackgroundJobs;
 using Itura.Payment.Infrastructure.EventHandlers;
 using Itura.Payment.Infrastructure.Persistence;
 using Itura.Payment.Infrastructure.Repositories;
@@ -35,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<ICoachPayoutRepository, CoachPayoutRepository>();
         services.AddScoped<IFieldEncryptionService, FieldEncryptionService>();
+
+        // Background jobs
+        services.AddHostedService<WeeklyPayoutJob>();
 
         // Paystack
         services.Configure<PaystackOptions>(config.GetSection(PaystackOptions.Section));
