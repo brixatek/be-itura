@@ -2,6 +2,7 @@ using Itura.SharedKernel.Results;
 using Itura.User.Application.Features.Users.Assessment;
 using Itura.User.Application.Features.Users.CompleteOnboarding;
 using Itura.User.Application.Features.Users.DeleteAccount;
+using Itura.User.Application.Features.Users.GetOnboardingStatus;
 using Itura.User.Application.Features.Users.GetPreferences;
 using Itura.User.Application.Features.Users.GetProfile;
 using Itura.User.Application.Features.Users.UpdatePreferences;
@@ -75,6 +76,13 @@ public sealed class UsersController(ISender sender) : ControllerBase
         return result.IsSuccess ? NoContent() : Problem(result);
     }
 
+    [HttpGet("onboarding/status")]
+    public async Task<IActionResult> GetOnboardingStatus(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetOnboardingStatusQuery(CurrentUserId), ct);
+        return result.IsSuccess ? Ok(new { success = true, data = result.Value }) : Problem(result);
+    }
+
     [HttpPost("me/onboarding")]
     public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingRequest request, CancellationToken ct)
     {
@@ -135,7 +143,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
             var c when c.StartsWith("Unauthorized") => StatusCodes.Status401Unauthorized,
             _ => StatusCodes.Status400BadRequest
         };
-        return Problem(detail: result.Error.Message, statusCode: status, title: result.Error.Code);
+        return StatusCode(status, new { success = false, error = new { code = result.Error.Code, message = result.Error.Message } });
     }
 }
 
@@ -172,7 +180,7 @@ public sealed class GamificationController(ISender sender) : ControllerBase
             var c when c.StartsWith("NotFound") => StatusCodes.Status404NotFound,
             _ => StatusCodes.Status400BadRequest
         };
-        return Problem(detail: result.Error.Message, statusCode: status, title: result.Error.Code);
+        return StatusCode(status, new { success = false, error = new { code = result.Error.Code, message = result.Error.Message } });
     }
 }
 

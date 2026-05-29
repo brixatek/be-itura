@@ -9,7 +9,7 @@ internal sealed class PaymentDbContextFactory : IDesignTimeDbContextFactory<Paym
     public PaymentDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<PaymentDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_payment;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd")
             .Options;
 
         return new PaymentDbContext(options, new NoOpPublisher());

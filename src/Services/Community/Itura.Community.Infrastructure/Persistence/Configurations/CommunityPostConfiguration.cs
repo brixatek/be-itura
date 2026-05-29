@@ -16,6 +16,7 @@ internal sealed class CommunityPostConfiguration : IEntityTypeConfiguration<Comm
         builder.Property(e => e.PostType).HasConversion<string>().HasMaxLength(20);
         builder.Property(e => e.Tags).HasColumnType("text[]");
         builder.Property(e => e.IsAnonymous).HasDefaultValue(false);
+        builder.Property(e => e.ReactionCount).HasColumnName("reaction_count").HasDefaultValue(0);
 
         builder.HasQueryFilter(e => !e.IsDeleted);
 

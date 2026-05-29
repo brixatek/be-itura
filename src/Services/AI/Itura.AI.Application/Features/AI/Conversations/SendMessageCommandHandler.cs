@@ -18,7 +18,12 @@ internal sealed class SendMessageCommandHandler(
     ILogger<SendMessageCommandHandler> logger)
     : IRequestHandler<SendMessageCommand, Result<SendMessageResult>>
 {
-    private const int DefaultDailyLimit = 50;
+    private static int GetDailyLimit(string tier) => tier.ToLowerInvariant() switch
+    {
+        "premium" => 50,
+        "pro" or "unlimited" => int.MaxValue,
+        _ => 5
+    };
 
     private static readonly string[] CrisisKeywords =
     [
@@ -43,7 +48,7 @@ internal sealed class SendMessageCommandHandler(
 
     public async Task<Result<SendMessageResult>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
-        var rateStatus = await rateLimiter.CheckAsync(request.UserId, DefaultDailyLimit, cancellationToken);
+        var rateStatus = await rateLimiter.CheckAsync(request.UserId, GetDailyLimit(request.Tier), cancellationToken);
         if (!rateStatus.IsAllowed)
             return Result.Failure<SendMessageResult>(
                 Error.Validation("AI.RateLimited", $"Daily message limit reached. Resets at {rateStatus.ResetAt:HH:mm} UTC."));

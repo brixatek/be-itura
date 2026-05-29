@@ -8,6 +8,7 @@ namespace Itura.User.Application.Features.Users.UploadAvatar;
 internal sealed class UploadAvatarCommandHandler(
     IUserProfileRepository profileRepository,
     IFileStorageService fileStorage,
+    IImageResizingService imageResizing,
     IUserUnitOfWork unitOfWork)
     : IRequestHandler<UploadAvatarCommand, Result<string>>
 {
@@ -26,12 +27,25 @@ internal sealed class UploadAvatarCommandHandler(
         if (profile is null)
             return Result.Failure<string>(Error.NotFound("UserProfile", request.UserId));
 
-        var url = await fileStorage.UploadAsync(request.FileStream, request.FileName, request.ContentType, cancellationToken);
+        // Read stream into memory once so we can resize multiple times
+        using var buffer = new MemoryStream();
+        await request.FileStream.CopyToAsync(buffer, cancellationToken);
+        buffer.Position = 0;
 
-        profile.UpdateProfile(profile.FullName, url, profile.Bio, profile.DateOfBirth, profile.Gender, profile.Timezone);
+        // Upload 400×400 (display size — this is the primary URL stored)
+        buffer.Position = 0;
+        await using var stream400 = await imageResizing.ResizeAsync(buffer, 400, 400, cancellationToken);
+        var url400 = await fileStorage.UploadAsync(stream400, $"avatar_400_{request.FileName}", "image/jpeg", cancellationToken);
+
+        // Upload 200×200 (thumbnail)
+        buffer.Position = 0;
+        await using var stream200 = await imageResizing.ResizeAsync(buffer, 200, 200, cancellationToken);
+        await fileStorage.UploadAsync(stream200, $"avatar_200_{request.FileName}", "image/jpeg", cancellationToken);
+
+        profile.UpdateProfile(profile.FullName, url400, profile.Bio, profile.DateOfBirth, profile.Gender, profile.Timezone);
         profileRepository.Update(profile);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(url);
+        return Result.Success(url400);
     }
 }

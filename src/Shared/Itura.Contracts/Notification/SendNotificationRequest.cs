@@ -4,4 +4,6 @@ public sealed record SendNotificationRequest(
     Guid UserId,
     string Title,
     string Body,
-    string Channel);
+    string Channel,
+    string? RecipientEmail = null,
+    string? RecipientName = null);

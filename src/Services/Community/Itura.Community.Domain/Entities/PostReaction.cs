@@ -18,4 +18,10 @@ public sealed class PostReaction : AuditableEntity
             UserId = userId,
             Emoji = emoji
         };
+
+    public void ChangeEmoji(string newEmoji)
+    {
+        Emoji = newEmoji;
+        MarkUpdated();
+    }
 }

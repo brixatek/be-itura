@@ -8,6 +8,7 @@ namespace Itura.Coach.Domain.Entities;
 public sealed class CoachProfile : AggregateRoot
 {
     public Guid UserId { get; private set; }
+    public string Email { get; private set; } = string.Empty;
     public string DisplayName { get; private set; } = string.Empty;
     public string Bio { get; private set; } = string.Empty;
     public List<string> Specializations { get; private set; } = [];
@@ -29,7 +30,7 @@ public sealed class CoachProfile : AggregateRoot
     private CoachProfile() { }
 
     public static Result<CoachProfile> Create(
-        Guid userId, string displayName, string bio,
+        Guid userId, string email, string displayName, string bio,
         IEnumerable<string> specializations, IEnumerable<string> languages,
         decimal hourlyRate, string currency, string? profileImageUrl, int yearsOfExperience)
     {
@@ -45,6 +46,7 @@ public sealed class CoachProfile : AggregateRoot
         var coach = new CoachProfile
         {
             UserId = userId,
+            Email = email.ToLowerInvariant(),
             DisplayName = displayName.Trim(),
             Bio = bio?.Trim() ?? string.Empty,
             Specializations = specializations.Select(s => s.Trim().ToLowerInvariant()).Distinct().Where(s => s.Length > 0).ToList(),

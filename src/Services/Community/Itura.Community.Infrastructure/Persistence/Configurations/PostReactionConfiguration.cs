@@ -18,7 +18,7 @@ internal sealed class PostReactionConfiguration : IEntityTypeConfiguration<PostR
         builder.Property(r => r.UpdatedAt).HasColumnName("updated_at");
 
         builder.HasIndex(r => r.PostId).HasDatabaseName("ix_post_reactions_post_id");
-        builder.HasIndex(r => new { r.PostId, r.UserId, r.Emoji })
+        builder.HasIndex(r => new { r.PostId, r.UserId })
             .IsUnique()
             .HasDatabaseName("ix_post_reactions_unique");
     }

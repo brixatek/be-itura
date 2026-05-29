@@ -1,0 +1,187 @@
+name: CI – Build & Push
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ── Detect which services changed ───────────────────────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      auth:         ${{ steps.filter.outputs.auth }}
+      user:         ${{ steps.filter.outputs.user }}
+      notification: ${{ steps.filter.outputs.notification }}
+      mood:         ${{ steps.filter.outputs.mood }}
+      journal:      ${{ steps.filter.outputs.journal }}
+      coach:        ${{ steps.filter.outputs.coach }}
+      booking:      ${{ steps.filter.outputs.booking }}
+      payment:      ${{ steps.filter.outputs.payment }}
+      content:      ${{ steps.filter.outputs.content }}
+      media:        ${{ steps.filter.outputs.media }}
+      community:    ${{ steps.filter.outputs.community }}
+      corporate:    ${{ steps.filter.outputs.corporate }}
+      gamification: ${{ steps.filter.outputs.gamification }}
+      analytics:    ${{ steps.filter.outputs.analytics }}
+      search:       ${{ steps.filter.outputs.search }}
+      ai:           ${{ steps.filter.outputs.ai }}
+      gateway:      ${{ steps.filter.outputs.gateway }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared: &shared
+              - src/Shared/**
+              - deploy/Dockerfile
+            auth:
+              - *shared
+              - src/Services/Auth/**
+            user:
+              - *shared
+              - src/Services/User/**
+            notification:
+              - *shared
+              - src/Services/Notification/**
+            mood:
+              - *shared
+              - src/Services/Mood/**
+            journal:
+              - *shared
+              - src/Services/Journal/**
+            coach:
+              - *shared
+              - src/Services/Coach/**
+            booking:
+              - *shared
+              - src/Services/Booking/**
+            payment:
+              - *shared
+              - src/Services/Payment/**
+            content:
+              - *shared
+              - src/Services/Content/**
+            media:
+              - *shared
+              - src/Services/Media/**
+            community:
+              - *shared
+              - src/Services/Community/**
+            corporate:
+              - *shared
+              - src/Services/Corporate/**
+            gamification:
+              - *shared
+              - src/Services/Gamification/**
+            analytics:
+              - *shared
+              - src/Services/Analytics/**
+            search:
+              - *shared
+              - src/Services/Search/**
+            ai:
+              - *shared
+              - src/Services/AI/**
+            gateway:
+              - src/Services/Gateway/**
+              - deploy/Dockerfile.gateway
+
+  # ── Build changed services ──────────────────────────────────────────────────
+  build:
+    name: ${{ matrix.service.name }}
+    needs: changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: auth,         dir: Auth,         assembly: Itura.Auth.API.dll,         changed: "${{ needs.changes.outputs.auth }}" }
+          - { name: user,         dir: User,         assembly: Itura.User.API.dll,         changed: "${{ needs.changes.outputs.user }}" }
+          - { name: notification, dir: Notification, assembly: Itura.Notification.API.dll, changed: "${{ needs.changes.outputs.notification }}" }
+          - { name: mood,         dir: Mood,         assembly: Itura.Mood.API.dll,         changed: "${{ needs.changes.outputs.mood }}" }
+          - { name: journal,      dir: Journal,      assembly: Itura.Journal.API.dll,      changed: "${{ needs.changes.outputs.journal }}" }
+          - { name: coach,        dir: Coach,        assembly: Itura.Coach.API.dll,        changed: "${{ needs.changes.outputs.coach }}" }
+          - { name: booking,      dir: Booking,      assembly: Itura.Booking.API.dll,      changed: "${{ needs.changes.outputs.booking }}" }
+          - { name: payment,      dir: Payment,      assembly: Itura.Payment.API.dll,      changed: "${{ needs.changes.outputs.payment }}" }
+          - { name: content,      dir: Content,      assembly: Itura.Content.API.dll,      changed: "${{ needs.changes.outputs.content }}" }
+          - { name: media,        dir: Media,        assembly: Itura.Media.API.dll,        changed: "${{ needs.changes.outputs.media }}" }
+          - { name: community,    dir: Community,    assembly: Itura.Community.API.dll,    changed: "${{ needs.changes.outputs.community }}" }
+          - { name: corporate,    dir: Corporate,    assembly: Itura.Corporate.API.dll,    changed: "${{ needs.changes.outputs.corporate }}" }
+          - { name: gamification, dir: Gamification, assembly: Itura.Gamification.API.dll, changed: "${{ needs.changes.outputs.gamification }}" }
+          - { name: analytics,    dir: Analytics,    assembly: Itura.Analytics.API.dll,    changed: "${{ needs.changes.outputs.analytics }}" }
+          - { name: search,       dir: Search,       assembly: Itura.Search.API.dll,       changed: "${{ needs.changes.outputs.search }}" }
+          - { name: ai,           dir: AI,           assembly: Itura.AI.API.dll,           changed: "${{ needs.changes.outputs.ai }}" }
+    # Skip this job if nothing in this service changed
+    if: ${{ matrix.service.changed == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/itura-${{ matrix.service.name }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/itura-${{ matrix.service.name }}:latest
+          build-args: |
+            SERVICE_DIR=${{ matrix.service.dir }}
+            SERVICE_NAME=${{ matrix.service.dir }}
+            ASSEMBLY=${{ matrix.service.assembly }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+  # ── Gateway ─────────────────────────────────────────────────────────────────
+  build-gateway:
+    name: gateway
+    needs: changes
+    if: ${{ needs.changes.outputs.gateway == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/Dockerfile.gateway
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/itura-gateway:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/itura-gateway:latest
+          cache-from: type=gha,scope=gateway
+          cache-to: type=gha,mode=max,scope=gateway

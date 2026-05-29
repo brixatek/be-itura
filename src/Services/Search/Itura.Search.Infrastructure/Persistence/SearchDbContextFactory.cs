@@ -9,7 +9,7 @@ internal sealed class SearchDbContextFactory : IDesignTimeDbContextFactory<Searc
     public SearchDbContext CreateDbContext(string[] args)
     {
         var opts = new DbContextOptionsBuilder<SearchDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_search;Username=postgres;Password=postgres",
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd",
                 npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", "itura_search"))
             .Options;
         return new SearchDbContext(opts, new NoOpPublisher());

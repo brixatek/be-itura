@@ -23,6 +23,11 @@ internal sealed class CoachPayoutRepository(PaymentDbContext context) : ICoachPa
             .Where(e => e.CoachUserId == coachUserId && !e.IsPaid)
             .SumAsync(e => e.NetAmount, ct);
 
+    public async Task<decimal> GetUnpaidEarningsCommissionTotalAsync(Guid coachUserId, CancellationToken ct = default) =>
+        await context.CoachEarnings
+            .Where(e => e.CoachUserId == coachUserId && !e.IsPaid)
+            .SumAsync(e => e.CommissionAmount, ct);
+
     public async Task AddEarningAsync(CoachEarning earning, CancellationToken ct = default) =>
         await context.CoachEarnings.AddAsync(earning, ct);
 

@@ -9,7 +9,7 @@ internal sealed class BookingDbContextFactory : IDesignTimeDbContextFactory<Book
     public BookingDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<BookingDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_booking;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd")
             .Options;
 
         return new BookingDbContext(options, new NoOpPublisher());

@@ -10,7 +10,7 @@ public sealed class CoachDbContextFactory : IDesignTimeDbContextFactory<CoachDbC
     public CoachDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<CoachDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_coach;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd")
             .Options;
 
         var services = new ServiceCollection();

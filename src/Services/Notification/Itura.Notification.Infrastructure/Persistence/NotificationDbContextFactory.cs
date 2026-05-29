@@ -10,7 +10,7 @@ public sealed class NotificationDbContextFactory : IDesignTimeDbContextFactory<N
     public NotificationDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<NotificationDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_notifications;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd")
             .Options;
 
         var services = new ServiceCollection();

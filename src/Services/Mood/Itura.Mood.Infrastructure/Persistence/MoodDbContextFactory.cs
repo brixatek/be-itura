@@ -10,7 +10,7 @@ public sealed class MoodDbContextFactory : IDesignTimeDbContextFactory<MoodDbCon
     public MoodDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<MoodDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_mood;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd")
             .Options;
 
         var services = new ServiceCollection();

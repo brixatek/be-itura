@@ -39,15 +39,20 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, EmailService>();
 
         // Push notifications
+        services.AddSingleton<ApnsService>();
         services.AddScoped<IPushNotificationService, FirebasePushService>();
 
         // MassTransit — consume integration events
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<UserRegisteredEventConsumer>();
-            x.AddConsumer<SendNotificationRequestConsumer>();
-            x.AddConsumer<LevelUpEventConsumer>();
-            x.AddConsumer<BadgeEarnedEventConsumer>();
+            x.AddConsumer<UserRegisteredEventConsumer>(cfg =>
+                cfg.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2))));
+            x.AddConsumer<SendNotificationRequestConsumer>(cfg =>
+                cfg.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2))));
+            x.AddConsumer<LevelUpEventConsumer>(cfg =>
+                cfg.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2))));
+            x.AddConsumer<BadgeEarnedEventConsumer>(cfg =>
+                cfg.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2))));
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 var host = config.GetConnectionString("RabbitMQ") ?? "localhost";

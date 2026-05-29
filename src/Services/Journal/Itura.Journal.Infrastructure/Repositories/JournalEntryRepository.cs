@@ -55,6 +55,16 @@ internal sealed class JournalEntryRepository(JournalDbContext context) : IJourna
             .Where(e => e.UserId == userId)
             .CountAsync(ct);
 
+    public async Task<int> CountThisWeekAsync(Guid userId, CancellationToken ct = default)
+    {
+        var today = DateTime.UtcNow.Date;
+        var daysSinceMonday = ((int)today.DayOfWeek + 6) % 7; // ISO week starts Monday
+        var weekStart = today.AddDays(-daysSinceMonday);
+        return await context.JournalEntries
+            .Where(e => e.UserId == userId && e.CreatedAt >= weekStart)
+            .CountAsync(ct);
+    }
+
     public async Task AddAsync(JournalEntry entry, CancellationToken ct = default) =>
         await context.JournalEntries.AddAsync(entry, ct);
 

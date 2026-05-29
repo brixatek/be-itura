@@ -17,7 +17,7 @@ internal sealed class CreateCoachProfileCommandHandler(
             return Result.Failure<Guid>(new Error("Coach.AlreadyExists", "A coach profile already exists for this user."));
 
         var result = Domain.Entities.CoachProfile.Create(
-            request.UserId, request.DisplayName, request.Bio,
+            request.UserId, request.Email, request.DisplayName, request.Bio,
             request.Specializations, request.Languages,
             request.HourlyRate, request.Currency,
             request.ProfileImageUrl, request.YearsOfExperience);

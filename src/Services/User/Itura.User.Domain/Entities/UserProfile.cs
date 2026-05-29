@@ -78,6 +78,7 @@ public sealed class UserProfile : AggregateRoot
         WeeklyDigest = weeklyDigest;
         Theme = theme;
         Language = language;
+        RaiseDomainEvent(new PreferencesUpdatedDomainEvent(Id, emailNotifications, pushNotifications, weeklyDigest, theme, language));
     }
 
     public int AwardXp(int amount)

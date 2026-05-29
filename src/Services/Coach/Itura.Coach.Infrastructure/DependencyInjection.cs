@@ -4,6 +4,7 @@ using Itura.Coach.Domain.Repositories;
 using Itura.Coach.Infrastructure.EventHandlers;
 using Itura.Coach.Infrastructure.Persistence;
 using Itura.Coach.Infrastructure.Repositories;
+using Itura.Coach.Infrastructure.Services;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,7 +27,11 @@ public static class DependencyInjection
         services.AddScoped<ICoachUnitOfWork, UnitOfWork>();
         services.AddScoped<ICoachRepository, CoachRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
-        services.AddScoped<ICoachEmailService, Itura.Coach.Infrastructure.Services.CoachEmailService>();
+        services.AddScoped<ICoachEmailService, CoachEmailService>();
+        services.AddScoped<ISlotCache, SlotCache>();
+
+        var redisConn = config.GetConnectionString("Redis") ?? "localhost:6379";
+        services.AddStackExchangeRedisCache(opts => opts.Configuration = redisConn);
 
         services.AddMassTransit(x =>
         {

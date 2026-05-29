@@ -24,22 +24,36 @@ internal sealed class ReactToPostCommandHandler(
         if (post is null)
             return Result.Failure(Error.NotFound("CommunityPost", request.PostId));
 
-        var existing = await reactionRepository.GetAsync(request.PostId, request.UserId, request.Emoji, cancellationToken);
+        var existing = await reactionRepository.GetByUserAndPostAsync(request.PostId, request.UserId, cancellationToken);
 
         if (request.Remove)
         {
             if (existing is null)
                 return Result.Failure(Error.NotFound("Reaction.NotFound", "Reaction not found."));
             reactionRepository.Remove(existing);
+            post.DecrementReactions();
+        }
+        else if (existing is not null)
+        {
+            // Upsert: update emoji if different, toggle off if same
+            if (existing.Emoji == request.Emoji)
+            {
+                reactionRepository.Remove(existing);
+                post.DecrementReactions();
+            }
+            else
+            {
+                existing.ChangeEmoji(request.Emoji);
+            }
         }
         else
         {
-            if (existing is not null)
-                return Result.Failure(Error.Conflict("Reaction.AlreadyExists", "You have already reacted with this emoji."));
             var reaction = PostReaction.Create(request.PostId, request.UserId, request.Emoji);
             await reactionRepository.AddAsync(reaction, cancellationToken);
+            post.IncrementReactions();
         }
 
+        postRepository.Update(post);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

@@ -1,4 +1,5 @@
-version: "3.9"
+# Infrastructure only — start this first, then run services with `dotnet run`
+# Full stack:  docker compose -f docker-compose.yml -f docker-compose.services.yml up --build
 
 services:
 
@@ -8,12 +9,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: itura_auth
+      POSTGRES_DB: postgres
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./infra/postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/02-extensions.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -25,7 +27,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: itura-redis
-    command: redis-server --appendonly yes --requirepass ""
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
@@ -41,12 +43,10 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: itura-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: itura
-      RABBITMQ_DEFAULT_PASS: itura_pass
+    # guest/guest is the RabbitMQ default — matches all appsettings.Development.json
     ports:
       - "5672:5672"
-      - "15672:15672"   # Management UI
+      - "15672:15672"   # Management UI → http://localhost:15672
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -57,25 +57,20 @@ services:
     networks:
       - itura-net
 
-  auth-api:
-    build:
-      context: .
-      dockerfile: src/Services/Auth/Itura.Auth.API/Dockerfile
-    container_name: itura-auth-api
+  mongodb:
+    image: mongo:7-jammy
+    container_name: itura-mongodb
     ports:
-      - "5001:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__AuthDb=Host=postgres;Port=5432;Database=itura_auth;Username=postgres;Password=postgres
-      - ConnectionStrings__Redis=redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
     networks:
       - itura-net
-    restart: unless-stopped
 
 networks:
   itura-net:
@@ -85,3 +80,4 @@ volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  mongodb_data:

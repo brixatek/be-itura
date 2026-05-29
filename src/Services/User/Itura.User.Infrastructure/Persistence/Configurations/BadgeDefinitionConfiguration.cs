@@ -28,6 +28,30 @@ internal sealed class BadgeDefinitionConfiguration : IEntityTypeConfiguration<Ba
         ("Community Member",  "Create your first community post",             "CommunityPostCreated",  "post_count >= 1"),
         ("Voice of Reason",   "Get 10 reactions on a post",                   "CommunityPostCreated",  "reaction_received >= 10"),
         ("Early Adopter",     "Join during the first month of launch",        "Registration",          "registration_day <= 30"),
+
+        // Journal milestones
+        ("Prolific Writer",   "Write 100 journal entries",                    "JournalCreated",        "journal_count >= 100"),
+        ("Daily Journaler",   "Write journal entries 14 days in a row",       "JournalCreated",        "journal_streak >= 14"),
+
+        // Mood tracking
+        ("Mood Veteran",      "Log your mood 50 times",                       "MoodLogged",            "mood_count >= 50"),
+        ("Mood Champion",     "Log your mood 100 times",                      "MoodLogged",            "mood_count >= 100"),
+        ("Year of Feelings",  "Log mood 365 days in a row",                   "MoodLogged",            "mood_streak >= 365"),
+
+        // Coaching sessions
+        ("Session Pro",       "Complete 10 coaching sessions",                "SessionCompleted",      "session_count >= 10"),
+        ("Coaching Veteran",  "Complete 50 coaching sessions",                "SessionCompleted",      "session_count >= 50"),
+
+        // XP milestones
+        ("Rising Star",       "Earn 500 XP",                                  "XpAwarded",             "xp >= 500"),
+        ("XP Legend",         "Earn 5000 XP",                                 "XpAwarded",             "xp >= 5000"),
+
+        // Community
+        ("Community Voice",   "Create 5 community posts",                     "CommunityPostCreated",  "post_count >= 5"),
+        ("Community Leader",  "Create 20 community posts",                    "CommunityPostCreated",  "post_count >= 20"),
+
+        // Wellness goals
+        ("Goal Achiever",     "Set at least 5 wellness goals",                "OnboardingCompleted",   "goal_count >= 5"),
     ];
 
     public void Configure(EntityTypeBuilder<BadgeDefinition> builder)

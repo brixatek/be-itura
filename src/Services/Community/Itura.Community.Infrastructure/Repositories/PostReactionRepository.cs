@@ -11,6 +11,10 @@ internal sealed class PostReactionRepository(CommunityDbContext context) : IPost
         context.PostReactions.FirstOrDefaultAsync(
             r => r.PostId == postId && r.UserId == userId && r.Emoji == emoji, ct);
 
+    public Task<PostReaction?> GetByUserAndPostAsync(Guid postId, Guid userId, CancellationToken ct = default) =>
+        context.PostReactions.FirstOrDefaultAsync(
+            r => r.PostId == postId && r.UserId == userId, ct);
+
     public async Task<Dictionary<string, int>> GetCountsByPostIdAsync(Guid postId, CancellationToken ct = default) =>
         await context.PostReactions
             .Where(r => r.PostId == postId)

@@ -1,0 +1,337 @@
+# Full-stack local environment — all 17 services containerized
+# Usage: docker compose -f docker-compose.yml -f docker-compose.services.yml up --build
+# Single service: docker compose -f docker-compose.yml -f docker-compose.services.yml up --build auth
+
+# Reusable build + env defaults (merged with <<: [*base, *deps] below)
+x-base: &base
+  restart: unless-stopped
+  networks:
+    - itura-net
+  environment:
+    ASPNETCORE_ENVIRONMENT: Development
+
+x-deps: &deps
+  depends_on:
+    postgres:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+
+services:
+
+  gateway:
+    <<: *base
+    container_name: itura-gateway
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.gateway
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Cors__AllowedOrigins: "http://localhost:3000"
+    depends_on:
+      - auth
+      - user
+      - ai
+      - mood
+      - journal
+      - community
+      - coach
+      - booking
+      - payment
+      - notification
+
+  auth:
+    <<: [*base, *deps]
+    container_name: itura-auth
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Auth
+        SERVICE_NAME: Auth
+        ASSEMBLY: Itura.Auth.API.dll
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__AuthDb: Host=postgres;Port=5432;Database=itura_auth;Username=postgres;Password=postgres
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  user:
+    <<: [*base, *deps]
+    container_name: itura-user
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: User
+        SERVICE_NAME: User
+        ASSEMBLY: Itura.User.API.dll
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__UserDb: Host=postgres;Port=5432;Database=itura_users;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  ai:
+    <<: *base
+    container_name: itura-ai
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: AI
+        SERVICE_NAME: AI
+        ASSEMBLY: Itura.AI.API.dll
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__AIDb: Host=postgres;Port=5432;Database=itura_ai;Username=postgres;Password=postgres
+      ConnectionStrings__MongoDB: mongodb://mongodb:27017
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__RabbitMQ: rabbitmq
+      OpenAI__ApiKey: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  mood:
+    <<: [*base, *deps]
+    container_name: itura-mood
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Mood
+        SERVICE_NAME: Mood
+        ASSEMBLY: Itura.Mood.API.dll
+    ports:
+      - "5004:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__MoodDb: Host=postgres;Port=5432;Database=itura_mood;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  journal:
+    <<: [*base, *deps]
+    container_name: itura-journal
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Journal
+        SERVICE_NAME: Journal
+        ASSEMBLY: Itura.Journal.API.dll
+    ports:
+      - "5005:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__JournalDb: Host=postgres;Port=5432;Database=itura_journal;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  community:
+    <<: [*base, *deps]
+    container_name: itura-community
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Community
+        SERVICE_NAME: Community
+        ASSEMBLY: Itura.Community.API.dll
+    ports:
+      - "5006:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CommunityDb: Host=postgres;Port=5432;Database=itura_community;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  coach:
+    <<: *base
+    container_name: itura-coach
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Coach
+        SERVICE_NAME: Coach
+        ASSEMBLY: Itura.Coach.API.dll
+    ports:
+      - "5007:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CoachDb: Host=postgres;Port=5432;Database=itura_coach;Username=postgres;Password=postgres
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__RabbitMQ: rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  booking:
+    <<: [*base, *deps]
+    container_name: itura-booking
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Booking
+        SERVICE_NAME: Booking
+        ASSEMBLY: Itura.Booking.API.dll
+    ports:
+      - "5008:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__BookingDb: Host=postgres;Port=5432;Database=itura_booking;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  payment:
+    <<: [*base, *deps]
+    container_name: itura-payment
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Payment
+        SERVICE_NAME: Payment
+        ASSEMBLY: Itura.Payment.API.dll
+    ports:
+      - "5009:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__PaymentDb: Host=postgres;Port=5432;Database=itura_payment;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+      Paystack__SecretKey: ${PAYSTACK_SECRET_KEY:-}
+
+  notification:
+    <<: [*base, *deps]
+    container_name: itura-notification
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Notification
+        SERVICE_NAME: Notification
+        ASSEMBLY: Itura.Notification.API.dll
+    ports:
+      - "5010:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__NotificationDb: Host=postgres;Port=5432;Database=itura_notification;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  content:
+    <<: [*base, *deps]
+    container_name: itura-content
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Content
+        SERVICE_NAME: Content
+        ASSEMBLY: Itura.Content.API.dll
+    ports:
+      - "5011:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ContentDb: Host=postgres;Port=5432;Database=itura_content;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  media:
+    <<: [*base, *deps]
+    container_name: itura-media
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Media
+        SERVICE_NAME: Media
+        ASSEMBLY: Itura.Media.API.dll
+    ports:
+      - "5012:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__MediaDb: Host=postgres;Port=5432;Database=itura_media;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  corporate:
+    <<: [*base, *deps]
+    container_name: itura-corporate
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Corporate
+        SERVICE_NAME: Corporate
+        ASSEMBLY: Itura.Corporate.API.dll
+    ports:
+      - "5013:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CorporateDb: Host=postgres;Port=5432;Database=itura_corporate;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  gamification:
+    <<: [*base, *deps]
+    container_name: itura-gamification
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Gamification
+        SERVICE_NAME: Gamification
+        ASSEMBLY: Itura.Gamification.API.dll
+    ports:
+      - "5014:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__GamificationDb: Host=postgres;Port=5432;Database=itura_gamification;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  analytics:
+    <<: [*base, *deps]
+    container_name: itura-analytics
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Analytics
+        SERVICE_NAME: Analytics
+        ASSEMBLY: Itura.Analytics.API.dll
+    ports:
+      - "5015:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__AnalyticsDb: Host=postgres;Port=5432;Database=itura_analytics;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq
+
+  search:
+    <<: [*base, *deps]
+    container_name: itura-search
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE_DIR: Search
+        SERVICE_NAME: Search
+        ASSEMBLY: Itura.Search.API.dll
+    ports:
+      - "5016:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SearchDb: Host=postgres;Port=5432;Database=itura_search;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMQ: rabbitmq

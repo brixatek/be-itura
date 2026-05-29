@@ -10,7 +10,7 @@ public sealed class JournalDbContextFactory : IDesignTimeDbContextFactory<Journa
     public JournalDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<JournalDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_journal;Username=postgres;Password=postgres")
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd")
             .Options;
 
         var services = new ServiceCollection();

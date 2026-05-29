@@ -1,3 +1,4 @@
+using Itura.Auth.Application.Features.Auth.DeleteAccount;
 using Itura.Auth.Application.Features.Auth.ForgotPassword;
 using Itura.Auth.Application.Features.Auth.Login;
 using Itura.Auth.Application.Features.Auth.Logout;
@@ -144,7 +145,9 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("forgot-ip")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
     {
         await sender.Send(new ForgotPasswordCommand(request.Email), ct);
@@ -159,6 +162,19 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var command = new ResetPasswordCommand(request.Token, request.NewPassword, request.ConfirmPassword);
         var result = await sender.Send(command, ct);
         return result.IsSuccess ? Ok(ApiResponse.Ok("Password reset successfully.")) : Problem(result);
+    }
+
+    [HttpDelete("account")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest request, CancellationToken ct)
+    {
+        var accountId = GetAccountId();
+        var result = await sender.Send(new DeleteAccountCommand(accountId, request.Password), ct);
+        return result.IsSuccess
+            ? Ok(ApiResponse.Ok("Account marked for deletion. It will be permanently deleted after 90 days."))
+            : Problem(result);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -203,6 +219,7 @@ public sealed record MfaVerifyRequest(Guid AccountId, string Code, bool UseBacku
 public sealed record MfaDisableRequest(string Password);
 public sealed record GoogleOAuthRequest(string Code, string RedirectUri, string? DeviceInfo = null);
 public sealed record ResendVerificationRequest(string Email);
+public sealed record DeleteAccountRequest(string Password);
 
 // ─── Standard response wrapper ────────────────────────────────────────────────
 

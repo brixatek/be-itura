@@ -55,6 +55,7 @@ public static class DependencyInjection
         {
             x.AddConsumer<BookingCompletedEventConsumer>();
             x.AddConsumer<UserRegisteredEventConsumer>();
+            x.AddConsumer<BookingRefundRequestedEventConsumer>();
 
             x.UsingRabbitMq((ctx, cfg) =>
             {

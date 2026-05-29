@@ -12,6 +12,7 @@ namespace Itura.Notification.Infrastructure.Consumers;
 public sealed class SendNotificationRequestConsumer(
     ISender sender,
     IPushNotificationService pushService,
+    IEmailService emailService,
     INotificationPreferenceRepository preferenceRepository,
     ILogger<SendNotificationRequestConsumer> logger) : IConsumer<SendNotificationRequest>
 {
@@ -28,7 +29,26 @@ public sealed class SendNotificationRequestConsumer(
             msg.UserId, msg.Title, msg.Body,
             NotificationType.InApp, channel), ct);
 
-        // Dispatch push for Push channel type — subject to user preferences and quiet hours
+        // Email channel — dispatch email when recipient address is provided
+        if (msg.Channel.Equals("Email", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!string.IsNullOrEmpty(msg.RecipientEmail))
+            {
+                await emailService.SendAsync(
+                    msg.RecipientEmail,
+                    msg.RecipientName ?? string.Empty,
+                    msg.Title,
+                    $"<p>{msg.Body}</p>",
+                    ct);
+            }
+            else
+            {
+                logger.LogWarning("Email notification requested for user {UserId} but no recipient email provided — skipped", msg.UserId);
+            }
+            return;
+        }
+
+        // Push channel — subject to user preferences and quiet hours
         if (msg.Channel.Equals("Push", StringComparison.OrdinalIgnoreCase))
         {
             var pref = await preferenceRepository.GetByUserIdAsync(msg.UserId, ct);

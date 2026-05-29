@@ -22,22 +22,27 @@ internal sealed class JwtService(IOptions<JwtOptions> opts) : IJwtService
 {
     private readonly JwtOptions _opts = opts.Value;
 
-    public string GenerateAccessToken(Guid accountId, string email, string role, string jti)
+    public string GenerateAccessToken(Guid accountId, string email, string role, string jti, string? tier = null, string? tenantId = null)
     {
         using var rsa = RSA.Create();
         rsa.ImportFromPem(_opts.PrivateKeyPem);
         var key = new RsaSecurityKey(rsa.ExportParameters(true));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, accountId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim(ClaimTypes.Role, role),
-            new Claim(JwtRegisteredClaimNames.Jti, jti),
-            new Claim(JwtRegisteredClaimNames.Iat,
+            new(JwtRegisteredClaimNames.Sub, accountId.ToString()),
+            new(JwtRegisteredClaimNames.Email, email),
+            new(ClaimTypes.Role, role),
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new(JwtRegisteredClaimNames.Iat,
                 DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
         };
+
+        if (!string.IsNullOrEmpty(tier))
+            claims.Add(new Claim("tier", tier));
+        if (!string.IsNullOrEmpty(tenantId))
+            claims.Add(new Claim("tenant_id", tenantId));
 
         var token = new JwtSecurityToken(
             issuer: _opts.Issuer,

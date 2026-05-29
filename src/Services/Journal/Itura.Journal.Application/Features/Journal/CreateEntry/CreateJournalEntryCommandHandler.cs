@@ -11,16 +11,16 @@ internal sealed class CreateJournalEntryCommandHandler(
     IEncryptionService encryption)
     : IRequestHandler<CreateJournalEntryCommand, Result<Guid>>
 {
-    private const int FreeTierLimit = 50;
+    private const int FreeTierWeeklyLimit = 3;
 
     public async Task<Result<Guid>> Handle(CreateJournalEntryCommand request, CancellationToken cancellationToken)
     {
         if (!request.IsPremium)
         {
-            var count = await repository.CountByUserIdAsync(request.UserId, cancellationToken);
-            if (count >= FreeTierLimit)
+            var weeklyCount = await repository.CountThisWeekAsync(request.UserId, cancellationToken);
+            if (weeklyCount >= FreeTierWeeklyLimit)
                 return Result.Failure<Guid>(Error.Validation("Journal.FreeTierLimitReached",
-                    $"Free accounts are limited to {FreeTierLimit} journal entries. Upgrade to premium for unlimited journaling."));
+                    $"Free accounts are limited to {FreeTierWeeklyLimit} journal entries per week. Upgrade to premium for unlimited journaling."));
         }
 
         var encryptedContent = encryption.Encrypt(request.Content);

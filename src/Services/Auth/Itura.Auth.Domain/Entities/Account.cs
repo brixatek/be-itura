@@ -7,8 +7,10 @@ namespace Itura.Auth.Domain.Entities;
 
 public sealed class Account : AggregateRoot
 {
-    private const int MaxFailedLoginAttempts = 5;
-    private const int LockoutMinutes = 30;
+    private const int SoftLockoutThreshold = 5;
+    private const int HardLockoutThreshold = 10;
+    private const int SoftLockoutMinutes = 15;
+    private const int HardLockoutMinutes = 1440; // 24 hours
 
     private Account() { } // EF Core
 
@@ -105,8 +107,10 @@ public sealed class Account : AggregateRoot
     {
         FailedLoginCount++;
 
-        if (FailedLoginCount >= MaxFailedLoginAttempts)
-            LockoutUntil = DateTime.UtcNow.AddMinutes(LockoutMinutes);
+        if (FailedLoginCount >= HardLockoutThreshold)
+            LockoutUntil = DateTime.UtcNow.AddMinutes(HardLockoutMinutes);
+        else if (FailedLoginCount >= SoftLockoutThreshold)
+            LockoutUntil = DateTime.UtcNow.AddMinutes(SoftLockoutMinutes);
 
         MarkUpdated();
     }
@@ -158,6 +162,17 @@ public sealed class Account : AggregateRoot
         if (!MfaBackupCodes.Remove(hashedCode))
             return Result.Failure(Error.Validation("Auth.InvalidBackupCode", "Invalid or already used backup code."));
         MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result MarkForDeletion()
+    {
+        if (Status == AccountStatus.Deleted)
+            return Result.Failure(Error.Conflict("Auth.AlreadyDeleted", "Account is already marked for deletion."));
+
+        Status = AccountStatus.Deleted;
+        MarkDeleted();
+        RaiseDomainEvent(new AccountMarkedForDeletionDomainEvent(Id, Email, DateTime.UtcNow));
         return Result.Success();
     }
 

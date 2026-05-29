@@ -23,7 +23,7 @@ internal sealed class RejectCoachCommandHandler(
         repository.Update(coach);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await emailService.SendRejectionEmailAsync(string.Empty, coach.DisplayName, request.Reason, cancellationToken);
+        await emailService.SendRejectionEmailAsync(coach.Email, coach.DisplayName, request.Reason, cancellationToken);
 
         return Result.Success();
     }

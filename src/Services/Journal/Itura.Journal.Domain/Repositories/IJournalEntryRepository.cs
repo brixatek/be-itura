@@ -12,6 +12,7 @@ public interface IJournalEntryRepository
         CancellationToken ct = default);
     Task<IReadOnlyList<string>> GetTagsByUserIdAsync(Guid userId, CancellationToken ct = default);
     Task<int> CountByUserIdAsync(Guid userId, CancellationToken ct = default);
+    Task<int> CountThisWeekAsync(Guid userId, CancellationToken ct = default);
     Task AddAsync(JournalEntry entry, CancellationToken ct = default);
     void Update(JournalEntry entry);
 }

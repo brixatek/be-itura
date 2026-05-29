@@ -14,6 +14,7 @@ internal sealed class CoachConfiguration : IEntityTypeConfiguration<CoachProfile
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(c => c.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(c => c.Email).HasColumnName("email").HasMaxLength(255).IsRequired().HasDefaultValue(string.Empty);
         builder.Property(c => c.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
         builder.Property(c => c.Bio).HasColumnName("bio").HasMaxLength(2000).IsRequired();
         builder.Property(c => c.Specializations).HasColumnName("specializations").HasColumnType("jsonb").IsRequired();

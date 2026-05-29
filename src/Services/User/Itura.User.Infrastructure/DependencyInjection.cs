@@ -1,11 +1,14 @@
 using Itura.User.Application.Common.Interfaces;
+using Itura.User.Domain.Events;
 using Itura.User.Domain.Repositories;
 using Itura.User.Infrastructure.BackgroundJobs;
 using Itura.User.Infrastructure.Consumers;
+using Itura.User.Infrastructure.EventHandlers;
 using Itura.User.Infrastructure.Persistence;
 using Itura.User.Infrastructure.Repositories;
 using Itura.User.Infrastructure.Services;
 using MassTransit;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -47,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IPreferencesCache, PreferencesCache>();
         services.AddScoped<ILeaderboardCache, LeaderboardCache>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IImageResizingService, ImageResizingService>();
         services.AddScoped<IBadgeEvaluationService, BadgeEvaluationService>();
 
         // Background jobs
@@ -96,6 +100,9 @@ public static class DependencyInjection
         }
 
         services.AddAuthorization();
+
+        services.AddScoped<INotificationHandler<OnboardingCompletedDomainEvent>, OnboardingCompletedDomainEventHandler>();
+        services.AddScoped<INotificationHandler<PreferencesUpdatedDomainEvent>, PreferencesUpdatedDomainEventHandler>();
 
         return services;
     }

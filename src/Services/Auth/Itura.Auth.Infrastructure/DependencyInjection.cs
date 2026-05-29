@@ -1,6 +1,7 @@
 using Itura.Auth.Application.Common.Interfaces;
 using Itura.Auth.Domain.Events;
 using Itura.Auth.Domain.Repositories;
+using Itura.Auth.Infrastructure.BackgroundJobs;
 using Itura.Auth.Infrastructure.EventHandlers;
 using Itura.Auth.Infrastructure.Persistence;
 using Itura.Auth.Infrastructure.Repositories;
@@ -100,8 +101,12 @@ public static class DependencyInjection
             });
         });
 
-        // Domain event handler registered manually so MediatR picks it up from Infrastructure assembly
+        // Domain event handlers
         services.AddScoped<INotificationHandler<AccountRegisteredDomainEvent>, AccountRegisteredDomainEventHandler>();
+        services.AddScoped<INotificationHandler<AccountMarkedForDeletionDomainEvent>, AccountMarkedForDeletionDomainEventHandler>();
+
+        // Background jobs
+        services.AddHostedService<HardDeleteExpiredAccountsJob>();
 
         return services;
     }

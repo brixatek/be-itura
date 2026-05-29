@@ -1,0 +1,269 @@
+[build]
+builder = "dockerfile"
+
+# ── Gateway ──────────────────────────────────────────────────────────────────
+[[services]]
+name = "gateway"
+dockerfile = "deploy/Dockerfile.gateway"
+buildContext = "."
+
+[services.deploy]
+startCommand = "dotnet Itura.Gateway.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Auth ─────────────────────────────────────────────────────────────────────
+[[services]]
+name = "auth"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Auth"
+SERVICE_NAME = "Auth"
+ASSEMBLY = "Itura.Auth.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Auth.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── User ─────────────────────────────────────────────────────────────────────
+[[services]]
+name = "user"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "User"
+SERVICE_NAME = "User"
+ASSEMBLY = "Itura.User.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.User.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Mood ─────────────────────────────────────────────────────────────────────
+[[services]]
+name = "mood"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Mood"
+SERVICE_NAME = "Mood"
+ASSEMBLY = "Itura.Mood.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Mood.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Journal ───────────────────────────────────────────────────────────────────
+[[services]]
+name = "journal"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Journal"
+SERVICE_NAME = "Journal"
+ASSEMBLY = "Itura.Journal.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Journal.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Coach ─────────────────────────────────────────────────────────────────────
+[[services]]
+name = "coach"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Coach"
+SERVICE_NAME = "Coach"
+ASSEMBLY = "Itura.Coach.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Coach.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Booking ───────────────────────────────────────────────────────────────────
+[[services]]
+name = "booking"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Booking"
+SERVICE_NAME = "Booking"
+ASSEMBLY = "Itura.Booking.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Booking.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Payment ───────────────────────────────────────────────────────────────────
+[[services]]
+name = "payment"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Payment"
+SERVICE_NAME = "Payment"
+ASSEMBLY = "Itura.Payment.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Payment.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Notification ──────────────────────────────────────────────────────────────
+[[services]]
+name = "notification"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Notification"
+SERVICE_NAME = "Notification"
+ASSEMBLY = "Itura.Notification.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Notification.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Community ─────────────────────────────────────────────────────────────────
+[[services]]
+name = "community"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Community"
+SERVICE_NAME = "Community"
+ASSEMBLY = "Itura.Community.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Community.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Content ───────────────────────────────────────────────────────────────────
+[[services]]
+name = "content"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Content"
+SERVICE_NAME = "Content"
+ASSEMBLY = "Itura.Content.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Content.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Media ─────────────────────────────────────────────────────────────────────
+[[services]]
+name = "media"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Media"
+SERVICE_NAME = "Media"
+ASSEMBLY = "Itura.Media.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Media.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Corporate ─────────────────────────────────────────────────────────────────
+[[services]]
+name = "corporate"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Corporate"
+SERVICE_NAME = "Corporate"
+ASSEMBLY = "Itura.Corporate.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Corporate.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Gamification ──────────────────────────────────────────────────────────────
+[[services]]
+name = "gamification"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Gamification"
+SERVICE_NAME = "Gamification"
+ASSEMBLY = "Itura.Gamification.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Gamification.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Analytics ─────────────────────────────────────────────────────────────────
+[[services]]
+name = "analytics"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Analytics"
+SERVICE_NAME = "Analytics"
+ASSEMBLY = "Itura.Analytics.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Analytics.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── Search ────────────────────────────────────────────────────────────────────
+[[services]]
+name = "search"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "Search"
+SERVICE_NAME = "Search"
+ASSEMBLY = "Itura.Search.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.Search.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# ── AI ────────────────────────────────────────────────────────────────────────
+[[services]]
+name = "ai"
+dockerfile = "deploy/Dockerfile"
+buildContext = "."
+
+[services.build.args]
+SERVICE_DIR = "AI"
+SERVICE_NAME = "AI"
+ASSEMBLY = "Itura.AI.API.dll"
+
+[services.deploy]
+startCommand = "dotnet Itura.AI.API.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 30

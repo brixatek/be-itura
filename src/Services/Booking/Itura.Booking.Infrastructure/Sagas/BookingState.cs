@@ -1,9 +1,11 @@
 using MassTransit;
+using System.ComponentModel.DataAnnotations;
 
 namespace Itura.Booking.Infrastructure.Sagas;
 
 public sealed class BookingState : SagaStateMachineInstance
 {
+    [Key]
     public Guid CorrelationId { get; set; }
     public string CurrentState { get; set; } = null!;
     public Guid CoachId { get; set; }

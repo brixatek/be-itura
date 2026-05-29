@@ -8,6 +8,7 @@ public interface ICoachPayoutRepository
     Task<List<CoachEarning>> GetUnpaidEarningsAsync(Guid coachUserId, CancellationToken ct = default);
     Task<decimal> GetTotalEarningsAsync(Guid coachUserId, CancellationToken ct = default);
     Task<decimal> GetUnpaidEarningsTotalAsync(Guid coachUserId, CancellationToken ct = default);
+    Task<decimal> GetUnpaidEarningsCommissionTotalAsync(Guid coachUserId, CancellationToken ct = default);
     Task AddEarningAsync(CoachEarning earning, CancellationToken ct = default);
     void UpdateEarning(CoachEarning earning);
 

@@ -23,7 +23,7 @@ internal sealed class ApproveCoachCommandHandler(
         repository.Update(coach);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await emailService.SendApprovalEmailAsync(string.Empty, coach.DisplayName, cancellationToken);
+        await emailService.SendApprovalEmailAsync(coach.Email, coach.DisplayName, cancellationToken);
 
         return Result.Success();
     }

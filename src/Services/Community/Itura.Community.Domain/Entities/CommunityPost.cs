@@ -14,6 +14,7 @@ public sealed class CommunityPost : AggregateRoot
     public List<string> Tags { get; private set; } = [];
     public int LikeCount { get; private set; }
     public int CommentCount { get; private set; }
+    public int ReactionCount { get; private set; }
     public bool IsPublic { get; private set; }
     public bool IsAnonymous { get; private set; }
 
@@ -66,5 +67,7 @@ public sealed class CommunityPost : AggregateRoot
     public void Unlike() => LikeCount = Math.Max(0, LikeCount - 1);
     public void IncrementComments() => CommentCount++;
     public void DecrementComments() => CommentCount = Math.Max(0, CommentCount - 1);
+    public void IncrementReactions() => ReactionCount++;
+    public void DecrementReactions() => ReactionCount = Math.Max(0, ReactionCount - 1);
     public void Delete() => MarkDeleted();
 }

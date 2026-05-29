@@ -39,8 +39,8 @@ public sealed class WeeklyPayoutJob(
 
             if (result.IsSuccess)
                 logger.LogInformation(
-                    "WeeklyPayoutJob completed: {Processed} processed, {Failed} failed, {Total:C} total",
-                    result.Value.Processed, result.Value.Failed, result.Value.TotalAmount);
+                    "WeeklyPayoutJob completed: {Processed} processed, {Failed} failed, net {Net:C} commission {Commission:C}",
+                    result.Value.Processed, result.Value.Failed, result.Value.TotalNetAmount, result.Value.TotalCommission);
             else
                 logger.LogError("WeeklyPayoutJob failed: {Error}", result.Error);
         }

@@ -7,6 +7,7 @@ namespace Itura.Notification.Infrastructure.Services;
 
 public sealed class FirebasePushService(
     IDeviceTokenRepository tokenRepository,
+    ApnsService apnsService,
     IConfiguration config,
     ILogger<FirebasePushService> logger) : IPushNotificationService
 {
@@ -54,7 +55,9 @@ public sealed class FirebasePushService(
         int sent = 0;
         foreach (var dt in tokens)
         {
-            var ok = await SendAsync(dt.Token, title, body, data, ct);
+            var ok = dt.Platform == "ios"
+                ? await apnsService.SendAsync(dt.Token, title, body, data, ct)
+                : await SendAsync(dt.Token, title, body, data, ct);
             if (ok) sent++;
         }
         return sent;

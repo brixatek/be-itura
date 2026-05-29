@@ -74,15 +74,19 @@ public sealed class PaymentRecord : AggregateRoot
         return Result.Success();
     }
 
-    public Result Refund()
+    public Result Refund(decimal? refundAmount = null)
     {
         if (Status != PaymentStatus.Completed)
             return Result.Failure(Error.Validation("Payment.Refund", "Only completed payments can be refunded."));
 
+        var actualRefund = refundAmount ?? Amount;
+        if (actualRefund <= 0 || actualRefund > Amount)
+            return Result.Failure(Error.Validation("Payment.RefundAmount", "Refund amount must be between 0 and the original payment amount."));
+
         Status = PaymentStatus.Refunded;
         MarkUpdated();
         RaiseDomainEvent(new PaymentRefundedDomainEvent(
-            Id, BookingId, PayerUserId, PayeeUserId, Amount, Currency));
+            Id, BookingId, PayerUserId, PayeeUserId, actualRefund, Currency));
         return Result.Success();
     }
 

@@ -58,8 +58,12 @@ public sealed class CoachesController(ISender sender) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProfile([FromBody] CreateCoachProfileRequest request, CancellationToken ct = default)
     {
+        var email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email)
+            ?? User.FindFirstValue("email")
+            ?? string.Empty;
+
         var result = await sender.Send(new CreateCoachProfileCommand(
-            CurrentUserId, request.DisplayName, request.Bio ?? string.Empty,
+            CurrentUserId, email, request.DisplayName, request.Bio ?? string.Empty,
             request.Specializations ?? [], request.Languages ?? ["english"],
             request.HourlyRate, request.Currency ?? "USD",
             request.ProfileImageUrl, request.YearsOfExperience), ct);

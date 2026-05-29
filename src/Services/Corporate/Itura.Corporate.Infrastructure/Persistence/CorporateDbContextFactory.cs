@@ -9,7 +9,7 @@ internal sealed class CorporateDbContextFactory : IDesignTimeDbContextFactory<Co
     public CorporateDbContext CreateDbContext(string[] args)
     {
         var opts = new DbContextOptionsBuilder<CorporateDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=itura_corporate;Username=postgres;Password=postgres",
+            .UseNpgsql("Host=gondola.proxy.rlwy.net;Port=37181;Database=railway;Username=postgres;Password=iRjeiDgqViuqVDRyVboZIUZeWVsYwrEd",
                 npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", "itura_corporate"))
             .Options;
         return new CorporateDbContext(opts, new NoOpPublisher());

@@ -1,0 +1,151 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: itura-production
+
+scrape_configs:
+
+  # Prometheus itself
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+
+  # Traefik ingress metrics
+  - job_name: traefik
+    static_configs:
+      - targets: [traefik:8080]
+
+  # Node exporter — system metrics (all Swarm nodes)
+  - job_name: node
+    dns_sd_configs:
+      - names: [tasks.node-exporter]
+        type: A
+        port: 9100
+
+  # cAdvisor — container metrics (all Swarm nodes)
+  - job_name: cadvisor
+    dns_sd_configs:
+      - names: [tasks.cadvisor]
+        type: A
+        port: 8080
+
+  # Application services — /metrics endpoint
+  - job_name: itura-gateway
+    dns_sd_configs:
+      - names: [tasks.gateway]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-auth
+    dns_sd_configs:
+      - names: [tasks.auth]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-user
+    dns_sd_configs:
+      - names: [tasks.user]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-ai
+    dns_sd_configs:
+      - names: [tasks.ai]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-mood
+    dns_sd_configs:
+      - names: [tasks.mood]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-journal
+    dns_sd_configs:
+      - names: [tasks.journal]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-community
+    dns_sd_configs:
+      - names: [tasks.community]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-coach
+    dns_sd_configs:
+      - names: [tasks.coach]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-booking
+    dns_sd_configs:
+      - names: [tasks.booking]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-payment
+    dns_sd_configs:
+      - names: [tasks.payment]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-notification
+    dns_sd_configs:
+      - names: [tasks.notification]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-content
+    dns_sd_configs:
+      - names: [tasks.content]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-media
+    dns_sd_configs:
+      - names: [tasks.media]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-search
+    dns_sd_configs:
+      - names: [tasks.search]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-analytics
+    dns_sd_configs:
+      - names: [tasks.analytics]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-corporate
+    dns_sd_configs:
+      - names: [tasks.corporate]
+        type: A
+        port: 8080
+    metrics_path: /metrics
+
+  - job_name: itura-gamification
+    dns_sd_configs:
+      - names: [tasks.gamification]
+        type: A
+        port: 8080
+    metrics_path: /metrics

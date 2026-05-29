@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1.4
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+WORKDIR /app
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+RUN apk add --no-cache icu-libs
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore "src/Services/Gateway/Itura.Gateway/Itura.Gateway.csproj" \
+    --runtime linux-musl-x64
+RUN dotnet publish "src/Services/Gateway/Itura.Gateway/Itura.Gateway.csproj" \
+    -c Release -o /app/publish /p:UseAppHost=false \
+    --runtime linux-musl-x64 --self-contained false
+
+FROM base AS final
+WORKDIR /app
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+COPY --from=build /app/publish .
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD wget -qO- http://localhost:8080/health || exit 1
+ENTRYPOINT ["dotnet", "Itura.Gateway.dll"]

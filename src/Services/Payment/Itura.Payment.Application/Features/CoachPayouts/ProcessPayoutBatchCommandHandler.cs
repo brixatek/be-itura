@@ -19,7 +19,8 @@ internal sealed class ProcessPayoutBatchCommandHandler(
         var coachIds = await repository.GetCoachesWithUnpaidEarningsAsync(cancellationToken);
         var processed = 0;
         var failed = 0;
-        var totalAmount = 0m;
+        var totalNetAmount = 0m;
+        var totalCommission = 0m;
 
         foreach (var coachId in coachIds)
         {
@@ -30,6 +31,8 @@ internal sealed class ProcessPayoutBatchCommandHandler(
 
                 var unpaidAmount = await repository.GetUnpaidEarningsTotalAsync(coachId, cancellationToken);
                 if (unpaidAmount < 1000m) continue; // minimum payout threshold: 1000 NGN
+
+                var commissionAmount = await repository.GetUnpaidEarningsCommissionTotalAsync(coachId, cancellationToken);
 
                 var bankCode = encryption.Decrypt(bankAccount.BankCodeEncrypted);
                 var accountNumber = encryption.Decrypt(bankAccount.AccountNumberEncrypted);
@@ -74,7 +77,8 @@ internal sealed class ProcessPayoutBatchCommandHandler(
 
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 processed++;
-                totalAmount += unpaidAmount;
+                totalNetAmount += unpaidAmount;
+                totalCommission += commissionAmount;
             }
             catch
             {
@@ -82,6 +86,6 @@ internal sealed class ProcessPayoutBatchCommandHandler(
             }
         }
 
-        return Result.Success(new ProcessPayoutBatchResult(processed, failed, totalAmount));
+        return Result.Success(new ProcessPayoutBatchResult(processed, failed, totalNetAmount, totalCommission));
     }
 }

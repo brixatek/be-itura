@@ -1,0 +1,513 @@
+# Docker Swarm production stack
+# Deploy: IMAGE_TAG=<sha> REPO=<ghcr-owner> docker stack deploy --with-registry-auth -c docker-stack.yml itura
+#
+# Required Docker secrets (create with: docker secret create <name> <file>):
+#   itura_jwt_private_key       — RSA private key PEM
+#   itura_jwt_public_key        — RSA public key PEM
+#   itura_db_password           — Hetzner Managed PostgreSQL password
+#   itura_anthropic_api_key     — Claude API key
+#   itura_paystack_secret_key   — Paystack secret key
+#   itura_smtp_password         — SMTP password
+#   itura_apns_private_key      — APNs P8 private key PEM
+#   itura_firebase_credentials  — Firebase service account JSON
+#   itura_storage_secret_key    — Object storage secret key
+#
+# Required env on manager node (/opt/itura/.env):
+#   REPO, IMAGE_TAG, DB_HOST, DB_PORT, REDIS_URL, RABBITMQ_URL,
+#   SMTP_HOST, SMTP_PORT, SMTP_USER, APNS_TEAM_ID, APNS_KEY_ID,
+#   APNS_BUNDLE_ID, STORAGE_ENDPOINT, STORAGE_ACCESS_KEY, STORAGE_BUCKET,
+#   CORS_ORIGINS, FRONTEND_URL
+
+version: "3.9"
+
+x-deploy-defaults: &deploy-defaults
+  replicas: 2
+  update_config:
+    parallelism: 1
+    delay: 10s
+    failure_action: rollback
+    order: start-first
+  rollback_config:
+    parallelism: 1
+    delay: 5s
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    max_attempts: 3
+  resources:
+    limits:
+      cpus: "0.50"
+      memory: 384M
+    reservations:
+      cpus: "0.10"
+      memory: 128M
+  placement:
+    preferences:
+      - spread: node.id
+
+x-common-env: &common-env
+  ASPNETCORE_ENVIRONMENT: Production
+  DOTNET_RUNNING_IN_CONTAINER: "true"
+
+networks:
+  itura-overlay:
+    driver: overlay
+    attachable: true
+  traefik-public:
+    driver: overlay
+    external: true
+
+secrets:
+  itura_jwt_private_key:
+    external: true
+  itura_jwt_public_key:
+    external: true
+  itura_db_password:
+    external: true
+  itura_anthropic_api_key:
+    external: true
+  itura_paystack_secret_key:
+    external: true
+  itura_smtp_password:
+    external: true
+  itura_apns_private_key:
+    external: true
+  itura_firebase_credentials:
+    external: true
+  itura_storage_secret_key:
+    external: true
+
+services:
+
+  # ── Traefik ingress ─────────────────────────────────────────────────────────
+  traefik:
+    image: traefik:v3.1
+    command:
+      - --api.dashboard=true
+      - --providers.docker.swarmMode=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.network=traefik-public
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addEntryPointsLabels=true
+      - --metrics.prometheus.addServicesLabels=true
+      - --accesslog=true
+      - --log.level=WARN
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${DOMAIN}`)
+        - traefik.http.routers.traefik-dashboard.entrypoints=websecure
+        - traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt
+        - traefik.http.routers.traefik-dashboard.service=api@internal
+        - traefik.http.routers.traefik-dashboard.middlewares=traefik-auth
+        - traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}
+        - traefik.http.services.traefik-noop.loadbalancer.server.port=8080
+
+  # ── API Gateway (YARP) ──────────────────────────────────────────────────────
+  gateway:
+    image: ghcr.io/${REPO}/itura-gateway:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      Cors__AllowedOrigins: ${CORS_ORIGINS}
+    networks:
+      - itura-overlay
+      - traefik-public
+    deploy:
+      <<: *deploy-defaults
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.gateway.rule=Host(`api.${DOMAIN}`)
+        - traefik.http.routers.gateway.entrypoints=websecure
+        - traefik.http.routers.gateway.tls.certresolver=letsencrypt
+        - traefik.http.services.gateway.loadbalancer.server.port=8080
+        - traefik.http.services.gateway.loadbalancer.healthcheck.path=/health
+        - traefik.http.services.gateway.loadbalancer.healthcheck.interval=15s
+
+  # ── Auth Service ────────────────────────────────────────────────────────────
+  auth:
+    image: ghcr.io/${REPO}/itura-auth:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_auth;
+        Username=itura_auth;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PrivateKeyPath: /run/secrets/itura_jwt_private_key
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      Jwt__Issuer: ${JWT_ISSUER:-https://api.itura.app}
+      Jwt__Audience: ${JWT_AUDIENCE:-itura-client}
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Smtp__Host: ${SMTP_HOST}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__User: ${SMTP_USER}
+      Smtp__PasswordFile: /run/secrets/itura_smtp_password
+      FrontendUrl: ${FRONTEND_URL}
+    secrets:
+      - itura_jwt_private_key
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_smtp_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── User Service ────────────────────────────────────────────────────────────
+  user:
+    image: ghcr.io/${REPO}/itura-user:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_user;
+        Username=itura_user;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Storage__Endpoint: ${STORAGE_ENDPOINT}
+      Storage__AccessKey: ${STORAGE_ACCESS_KEY}
+      Storage__SecretKeyFile: /run/secrets/itura_storage_secret_key
+      Storage__Bucket: ${STORAGE_BUCKET}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_storage_secret_key
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── AI Service ──────────────────────────────────────────────────────────────
+  ai:
+    image: ghcr.io/${REPO}/itura-ai:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_ai;
+        Username=itura_ai;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      Redis__ConnectionString: ${REDIS_URL}
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Anthropic__ApiKeyFile: /run/secrets/itura_anthropic_api_key
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_anthropic_api_key
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+        reservations:
+          cpus: "0.15"
+          memory: 192M
+
+  # ── Mood Service ────────────────────────────────────────────────────────────
+  mood:
+    image: ghcr.io/${REPO}/itura-mood:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_mood;
+        Username=itura_mood;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Journal Service ─────────────────────────────────────────────────────────
+  journal:
+    image: ghcr.io/${REPO}/itura-journal:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_journal;
+        Username=itura_journal;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Coach Service ───────────────────────────────────────────────────────────
+  coach:
+    image: ghcr.io/${REPO}/itura-coach:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_coach;
+        Username=itura_coach;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      Redis__ConnectionString: ${REDIS_URL}
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Booking Service ─────────────────────────────────────────────────────────
+  booking:
+    image: ghcr.io/${REPO}/itura-booking:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_booking;
+        Username=itura_booking;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Payment Service ─────────────────────────────────────────────────────────
+  payment:
+    image: ghcr.io/${REPO}/itura-payment:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_payment;
+        Username=itura_payment;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Paystack__SecretKeyFile: /run/secrets/itura_paystack_secret_key
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_paystack_secret_key
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Notification Service ────────────────────────────────────────────────────
+  notification:
+    image: ghcr.io/${REPO}/itura-notification:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_notification;
+        Username=itura_notification;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Smtp__Host: ${SMTP_HOST}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__User: ${SMTP_USER}
+      Smtp__PasswordFile: /run/secrets/itura_smtp_password
+      Apns__TeamId: ${APNS_TEAM_ID}
+      Apns__KeyId: ${APNS_KEY_ID}
+      Apns__BundleId: ${APNS_BUNDLE_ID}
+      Apns__PrivateKeyFile: /run/secrets/itura_apns_private_key
+      Apns__Sandbox: "false"
+      Firebase__CredentialsFile: /run/secrets/itura_firebase_credentials
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_smtp_password
+      - itura_apns_private_key
+      - itura_firebase_credentials
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Community Service ───────────────────────────────────────────────────────
+  community:
+    image: ghcr.io/${REPO}/itura-community:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_community;
+        Username=itura_community;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Content Service ─────────────────────────────────────────────────────────
+  content:
+    image: ghcr.io/${REPO}/itura-content:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_content;
+        Username=itura_content;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Storage__Endpoint: ${STORAGE_ENDPOINT}
+      Storage__AccessKey: ${STORAGE_ACCESS_KEY}
+      Storage__SecretKeyFile: /run/secrets/itura_storage_secret_key
+      Storage__Bucket: ${STORAGE_BUCKET}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_storage_secret_key
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Media Service ───────────────────────────────────────────────────────────
+  media:
+    image: ghcr.io/${REPO}/itura-media:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_media;
+        Username=itura_media;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+      Storage__Endpoint: ${STORAGE_ENDPOINT}
+      Storage__AccessKey: ${STORAGE_ACCESS_KEY}
+      Storage__SecretKeyFile: /run/secrets/itura_storage_secret_key
+      Storage__Bucket: ${STORAGE_BUCKET}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+      - itura_storage_secret_key
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Corporate Service ───────────────────────────────────────────────────────
+  corporate:
+    image: ghcr.io/${REPO}/itura-corporate:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_corporate;
+        Username=itura_corporate;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Gamification Service ────────────────────────────────────────────────────
+  gamification:
+    image: ghcr.io/${REPO}/itura-gamification:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_gamification;
+        Username=itura_gamification;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Analytics Service ───────────────────────────────────────────────────────
+  analytics:
+    image: ghcr.io/${REPO}/itura-analytics:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_analytics;
+        Username=itura_analytics;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+  # ── Search Service ──────────────────────────────────────────────────────────
+  search:
+    image: ghcr.io/${REPO}/itura-search:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      ConnectionStrings__DefaultConnection: >-
+        Host=${DB_HOST};Port=${DB_PORT:-5432};Database=itura_search;
+        Username=itura_search;Password__File=/run/secrets/itura_db_password;
+        SSL Mode=Require;Trust Server Certificate=true
+      Jwt__PublicKeyPath: /run/secrets/itura_jwt_public_key
+      RabbitMq__Host: ${RABBITMQ_URL}
+    secrets:
+      - itura_jwt_public_key
+      - itura_db_password
+    networks:
+      - itura-overlay
+    deploy:
+      <<: *deploy-defaults
+
+volumes:
+  traefik-letsencrypt:
+    driver: local

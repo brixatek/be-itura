@@ -1,3 +1,4 @@
+using Itura.Coach.Application.Common.Interfaces;
 using Itura.Coach.Application.DTOs;
 using Itura.Coach.Domain.Repositories;
 using Itura.SharedKernel.Results;
@@ -5,12 +6,18 @@ using MediatR;
 
 namespace Itura.Coach.Application.Features.Availability;
 
-internal sealed class GetAvailableSlotsQueryHandler(IAvailabilityRepository repository)
+internal sealed class GetAvailableSlotsQueryHandler(
+    IAvailabilityRepository repository,
+    ISlotCache slotCache)
     : IRequestHandler<GetAvailableSlotsQuery, Result<List<TimeSlotDto>>>
 {
     public async Task<Result<List<TimeSlotDto>>> Handle(
         GetAvailableSlotsQuery request, CancellationToken cancellationToken)
     {
+        var cached = await slotCache.GetAsync(request.CoachUserId, request.Date, request.ViewerTimezone ?? "UTC", cancellationToken);
+        if (cached is not null)
+            return Result.Success(cached);
+
         var dayOfWeek = request.Date.DayOfWeek;
         var schedule = await repository.GetByCoachUserIdAsync(request.CoachUserId, cancellationToken);
         var blocks = schedule.Where(a => a.DayOfWeek == dayOfWeek).ToList();
@@ -62,7 +69,9 @@ internal sealed class GetAvailableSlotsQueryHandler(IAvailabilityRepository repo
             }
         }
 
-        return Result.Success(slots.OrderBy(s => s.StartUtc).ToList());
+        var result = slots.OrderBy(s => s.StartUtc).ToList();
+        await slotCache.SetAsync(request.CoachUserId, request.Date, request.ViewerTimezone ?? "UTC", result, cancellationToken);
+        return Result.Success(result);
     }
 
     private static TimeZoneInfo GetTimezone(string? id)

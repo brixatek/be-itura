@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Itura.AI.API.Controllers;
 
@@ -62,12 +63,44 @@ public sealed class AIController(IMediator mediator) : ControllerBase
         return Ok(new { success = true, data = result.Value });
     }
 
+    [HttpDelete("conversations/{id}")]
+    public async Task<IActionResult> DeleteConversation(string id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new DeleteConversationCommand(id, GetUserId()), ct);
+        if (result.IsFailure) return result.Error.Code.Contains("NotFound")
+            ? NotFound(new { error = result.Error.Message })
+            : StatusCode(403, new { error = result.Error.Message });
+        return NoContent();
+    }
+
     [HttpPost("conversations")]
     public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new SendMessageCommand(GetUserId(), request.ConversationId, request.Message), ct);
+        var tier = User.FindFirstValue("tier") ?? "free";
+        var result = await mediator.Send(new SendMessageCommand(GetUserId(), request.ConversationId, request.Message, tier), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error.Message });
         return Ok(new { success = true, data = result.Value });
+    }
+
+    [HttpPost("conversations/stream")]
+    public async Task StreamMessage([FromBody] SendMessageRequest request, CancellationToken ct)
+    {
+        Response.Headers.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers.Connection = "keep-alive";
+
+        var tier = User.FindFirstValue("tier") ?? "free";
+        var command = new StreamConversationCommand(GetUserId(), request.ConversationId, request.Message, tier);
+
+        await foreach (var token in mediator.CreateStream(command, ct))
+        {
+            var line = $"data: {JsonSerializer.Serialize(new { token })}\n\n";
+            await Response.WriteAsync(line, ct);
+            await Response.Body.FlushAsync(ct);
+        }
+
+        await Response.WriteAsync("data: [DONE]\n\n", ct);
+        await Response.Body.FlushAsync(ct);
     }
 
     // ─── Journal Prompts ────────────────────────────────────────────────────────
